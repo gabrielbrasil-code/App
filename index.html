@@ -3,78 +3,80 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Coleta de Sensores</title>
+<title>Sensorweb — Coleta de Sensores</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#12161c; --surface:#1b212a; --surface-alt:#232b36; --line:#313b48;
-    --text:#e7eaee; --text-muted:#8b96a5; --accent:#f2a93b; --accent-dark:#c6821a;
-    --ok:#4caf7d; --warn:#e2574c;
+    --bg:#F3F7F7; --surface:#FFFFFF; --surface-alt:#EAF4F3; --line:#DCE7E6;
+    --text:#1B1B1B; --text-muted:#636364;
+    --accent:#01A19E; --accent-dark:#017875; --accent-soft:#E3F3F2;
+    --warn:#FF8F33; --danger:#D64545; --ok:#01A19E;
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
   html,body{margin:0;padding:0;background:var(--bg);color:var(--text);
-    font-family:'Inter',system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased;}
-  .mono{font-family:'IBM Plex Mono',ui-monospace,monospace;}
+    font-family:'Ubuntu',system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased;}
+  .mono{font-variant-numeric:tabular-nums;letter-spacing:.01em;}
   #app{max-width:480px;margin:0 auto;min-height:100vh;position:relative;
     display:flex;flex-direction:column;background:var(--bg);}
 
-  .topbar{position:sticky;top:0;z-index:20;background:var(--bg);border-bottom:1px solid var(--line);
+  .topbar{position:sticky;top:0;z-index:20;background:var(--surface);border-bottom:1px solid var(--line);
     padding:12px 16px;display:flex;align-items:center;gap:10px;}
-  .topbar .back{width:32px;height:32px;border-radius:8px;background:var(--surface);
+  .topbar .back{width:32px;height:32px;border-radius:8px;background:var(--surface-alt);
     border:1px solid var(--line);display:flex;align-items:center;justify-content:center;
-    color:var(--text);cursor:pointer;flex-shrink:0;font-size:16px;}
+    color:var(--accent);cursor:pointer;flex-shrink:0;font-size:16px;}
   .topbar .titles{min-width:0;flex:1;}
-  .topbar h1{font-size:13.5px;font-weight:600;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  .topbar p{font-size:11.5px;color:var(--text-muted);margin:2px 0 0;font-family:'IBM Plex Mono',monospace;
-    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  .badge{font-size:11px;padding:3px 9px;border-radius:20px;font-weight:600;
-    background:rgba(76,175,125,.15);color:var(--ok);flex-shrink:0;}
+  .topbar h1{font-size:13.5px;font-weight:700;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .topbar p{font-size:11.5px;color:var(--text-muted);margin:2px 0 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .badge{font-size:11px;padding:3px 9px;border-radius:20px;font-weight:700;
+    background:var(--accent-soft);color:var(--accent-dark);flex-shrink:0;}
+  .logout-link{font-size:12px;color:var(--text-muted);flex-shrink:0;cursor:pointer;}
 
   main{flex:1;padding:16px;padding-bottom:96px;}
   .screen{display:none;}
   .screen.active{display:block;animation:fade .25s ease;}
   @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 
-  .hero{padding:24px 0 6px;}
-  .hero .tag{font-size:12px;color:var(--accent);font-weight:600;letter-spacing:.02em;}
-  .hero h2{font-size:22px;line-height:1.3;margin:8px 0 10px;font-weight:600;}
+  .hero{padding:20px 0 6px;}
+  .hero .tag{font-size:12px;color:var(--accent);font-weight:700;letter-spacing:.02em;}
+  .hero h2{font-size:21px;line-height:1.3;margin:8px 0 10px;font-weight:700;}
   .hero p{color:var(--text-muted);font-size:13.5px;line-height:1.6;margin:0;}
 
-  label{display:block;font-size:12px;color:var(--text-muted);margin:18px 0 7px;font-weight:500;}
-  input[type=text],input[type=number],input[type=date],select,textarea{
+  label{display:block;font-size:12px;color:var(--text-muted);margin:16px 0 7px;font-weight:500;}
+  input[type=text],input[type=password],input[type=number],input[type=date],select,textarea{
     width:100%;background:var(--surface);border:1px solid var(--line);color:var(--text);
-    padding:12px 13px;border-radius:10px;font-size:14px;font-family:'IBM Plex Mono',monospace;outline:none;}
+    padding:12px 13px;border-radius:10px;font-size:14px;font-family:'Ubuntu',sans-serif;outline:none;}
   input:focus,select:focus,textarea:focus{border-color:var(--accent);}
-  textarea{font-family:'Inter',sans-serif;resize:vertical;min-height:64px;}
+  textarea{resize:vertical;min-height:64px;}
   .hint{font-size:12px;color:var(--text-muted);margin-top:8px;line-height:1.5;}
 
   .btn{display:flex;align-items:center;justify-content:center;gap:8px;padding:13px 16px;
-    border-radius:10px;font-size:14px;font-weight:600;border:none;cursor:pointer;width:100%;
-    font-family:'Inter',sans-serif;}
-  .btn-primary{background:var(--accent);color:#1a1200;}
+    border-radius:10px;font-size:14px;font-weight:700;border:none;cursor:pointer;width:100%;
+    font-family:'Ubuntu',sans-serif;}
+  .btn-primary{background:var(--accent);color:#fff;}
   .btn-primary:active{background:var(--accent-dark);}
   .btn-primary:disabled{background:var(--line);color:var(--text-muted);}
   .btn-ghost{background:var(--surface);color:var(--text);border:1px solid var(--line);}
-  .btn-ok{background:var(--ok);color:#082014;}
+  .btn-ok{background:var(--accent);color:#fff;}
+  .btn-warn{background:var(--warn);color:#1b1b1b;}
   .btn-sm{padding:9px 12px;font-size:12.5px;}
+  .btn-text{background:transparent;color:var(--accent);font-weight:600;padding:6px;width:auto;}
 
   .info-line{display:flex;justify-content:space-between;gap:12px;padding:9px 0;
     border-bottom:1px solid var(--line);font-size:13px;}
   .info-line:last-child{border-bottom:none;}
   .info-line .k{color:var(--text-muted);flex-shrink:0;}
-  .info-line .v{text-align:right;font-family:'IBM Plex Mono',monospace;font-size:12.5px;
-    word-break:break-word;}
+  .info-line .v{text-align:right;word-break:break-word;font-weight:500;}
 
   .progress-row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px;}
   .progress-row .count{font-size:12.5px;color:var(--text-muted);}
   .progress-track{height:5px;background:var(--surface-alt);border-radius:4px;overflow:hidden;margin-bottom:18px;}
-  .progress-fill{height:100%;background:var(--ok);border-radius:4px;transition:width .3s;}
+  .progress-fill{height:100%;background:var(--accent);border-radius:4px;transition:width .3s;}
 
   .filter-row{display:flex;gap:8px;margin-bottom:16px;overflow-x:auto;padding-bottom:2px;}
   .filter-chip{flex-shrink:0;padding:6px 13px;border-radius:20px;font-size:12.5px;font-weight:600;
     background:var(--surface);border:1px solid var(--line);color:var(--text-muted);cursor:pointer;}
-  .filter-chip.active{background:var(--accent);color:#1a1200;border-color:var(--accent);}
+  .filter-chip.active{background:var(--accent);color:#fff;border-color:var(--accent);}
 
   .point-list{position:relative;padding-left:20px;}
   .point-list::before{content:'';position:absolute;left:8px;top:8px;bottom:8px;width:1px;background:var(--line);}
@@ -82,29 +84,28 @@
     border:1px solid var(--line);border-radius:10px;cursor:pointer;display:flex;align-items:center;gap:10px;}
   .point::before{content:'';position:absolute;left:-16px;top:50%;transform:translateY(-50%);
     width:9px;height:9px;border-radius:50%;background:var(--bg);border:2px solid var(--line);}
-  .point.done::before{background:var(--ok);border-color:var(--ok);}
+  .point.done::before{background:var(--accent);border-color:var(--accent);}
   .point-info{flex:1;min-width:0;}
-  .point-info .xid{font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--accent);margin:0 0 3px;}
+  .point-info .xid{font-size:11.5px;color:var(--accent);margin:0 0 3px;font-weight:700;}
   .point-info .name{font-size:13px;font-weight:500;margin:0;line-height:1.4;
     display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;color:var(--text);}
-  .status-chip{font-size:10.5px;padding:4px 9px;border-radius:20px;font-weight:600;flex-shrink:0;white-space:nowrap;}
-  .status-chip.pending{background:rgba(139,150,165,.15);color:var(--text-muted);}
-  .status-chip.done{background:rgba(76,175,125,.15);color:var(--ok);}
+  .status-chip{font-size:10.5px;padding:4px 9px;border-radius:20px;font-weight:700;flex-shrink:0;white-space:nowrap;}
+  .status-chip.pending{background:var(--surface-alt);color:var(--text-muted);}
+  .status-chip.done{background:var(--accent-soft);color:var(--accent-dark);}
+  .status-chip.em_andamento{background:#FFF1E0;color:#B25E00;}
 
   .footer-fixed{position:sticky;bottom:0;left:0;right:0;padding:14px 16px;
     background:linear-gradient(to top,var(--bg) 65%,transparent);max-width:480px;margin:0 auto;}
 
   .field-card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:15px;margin-bottom:12px;}
-  .field-card h3{font-size:12px;margin:0 0 4px;color:var(--text-muted);font-weight:600;
-    display:flex;align-items:center;justify-content:space-between;}
+  .field-card h3{font-size:12px;margin:0 0 4px;color:var(--text-muted);font-weight:700;
+    display:flex;align-items:center;justify-content:space-between;letter-spacing:.02em;text-transform:uppercase;}
   .field-card .ref-box{background:var(--surface-alt);border-radius:8px;padding:10px 12px;margin-bottom:2px;}
   .scan-field{display:flex;gap:8px;align-items:stretch;margin-top:6px;}
   .scan-field input{flex:1;}
   .scan-field .scan-btn{flex-shrink:0;width:44px;background:var(--surface-alt);border:1px solid var(--line);
     border-radius:10px;color:var(--accent);display:flex;align-items:center;justify-content:center;
     cursor:pointer;font-size:17px;}
-  .filled-tag{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--ok);
-    background:rgba(76,175,125,.12);padding:3px 9px;border-radius:20px;margin-top:8px;}
   .skip-toggle{font-size:12px;color:var(--text-muted);margin-top:9px;display:flex;align-items:center;gap:7px;cursor:pointer;}
   .skip-toggle input{width:auto;accent-color:var(--accent);}
   .row-2{display:flex;gap:10px;}
@@ -117,7 +118,6 @@
 
   canvas{display:none;}
 
-  /* modal câmera */
   .cam-modal{position:fixed;inset:0;background:#000;z-index:200;display:none;flex-direction:column;}
   .cam-modal.show{display:flex;}
   .cam-modal video{flex:1;width:100%;object-fit:cover;}
@@ -132,97 +132,131 @@
   .cam-shutter{width:66px;height:66px;border-radius:50%;background:#fff;border:4px solid rgba(255,255,255,.35);cursor:pointer;}
   .cam-hint{color:rgba(255,255,255,.75);font-size:12.5px;text-align:center;padding:0 30px;}
 
-  .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--surface-alt);
-    border:1px solid var(--line);color:var(--text);padding:12px 18px;border-radius:10px;font-size:13px;
-    z-index:300;box-shadow:0 8px 24px rgba(0,0,0,.4);opacity:0;pointer-events:none;
+  .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#1B1B1B;
+    border:1px solid #333;color:#fff;padding:12px 18px;border-radius:10px;font-size:13px;
+    z-index:300;box-shadow:0 8px 24px rgba(0,0,0,.25);opacity:0;pointer-events:none;
     transition:opacity .25s, transform .25s;max-width:88%;text-align:center;}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(-4px);}
 
   .summary-row{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:13px 14px;margin-bottom:9px;}
   .summary-row .top{display:flex;justify-content:space-between;gap:10px;margin-bottom:5px;}
-  .summary-row .xid{font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--accent);}
+  .summary-row .xid{font-size:11.5px;color:var(--accent);font-weight:700;}
   .summary-row .name{font-size:12.5px;color:var(--text-muted);margin:0 0 8px;line-height:1.4;}
   .kv-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 14px;font-size:12px;}
   .kv-grid .k{color:var(--text-muted);}
-  .kv-grid .v{font-family:'IBM Plex Mono',monospace;color:var(--text);}
+  .kv-grid .v{color:var(--text);font-weight:500;}
   .thumb-strip{display:flex;gap:6px;margin-top:9px;}
   .thumb-strip img{width:34px;height:34px;object-fit:cover;border-radius:6px;border:1px solid var(--line);}
 
-  .payload-toggle{font-size:12.5px;color:var(--accent);cursor:pointer;margin:16px 0 10px;display:inline-block;}
-  .payload{background:var(--surface-alt);border:1px solid var(--line);border-radius:10px;padding:12px 14px;
-    font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-muted);white-space:pre-wrap;
+  .payload-toggle{font-size:12.5px;color:var(--accent);cursor:pointer;margin:16px 0 10px;display:inline-block;font-weight:600;}
+  .payload{background:#1B1B1B;border:1px solid #333;border-radius:10px;padding:12px 14px;
+    font-family:ui-monospace,monospace;font-size:11px;color:#ccc;white-space:pre-wrap;
     word-break:break-all;max-height:240px;overflow:auto;display:none;}
   .payload.show{display:block;}
 
   .empty{text-align:center;padding:44px 20px;color:var(--text-muted);}
   .empty .icon{font-size:30px;margin-bottom:10px;}
+
+  /* login */
+  .login-hero{background:linear-gradient(135deg,var(--accent),#02807D);color:#fff;
+    padding:52px 24px 40px;text-align:center;position:relative;overflow:hidden;}
+  .login-hero::after{content:'';position:absolute;inset:0;opacity:.15;
+    background-image:radial-gradient(circle at 20% 20%, transparent 0, transparent 40%),
+      repeating-linear-gradient(120deg, rgba(255,255,255,.5) 0 1px, transparent 1px 46px),
+      repeating-linear-gradient(60deg, rgba(255,255,255,.5) 0 1px, transparent 1px 46px);
+    pointer-events:none;}
+  .login-hero .mark{width:44px;height:62px;margin:0 auto 14px;color:#fff;position:relative;z-index:1;}
+  .login-hero .wordmark{font-size:26px;font-weight:700;margin:0;position:relative;z-index:1;}
+  .login-hero .claim{font-size:12.5px;opacity:.85;margin:6px 0 0;position:relative;z-index:1;}
+  .login-form{padding:26px 24px;}
+  details.server-config{margin-top:22px;font-size:12.5px;color:var(--text-muted);}
+  details.server-config summary{cursor:pointer;font-weight:600;color:var(--accent);}
+  details.server-config .inner{margin-top:10px;}
+
+  /* admin */
+  .tabbar{display:flex;gap:8px;margin-bottom:16px;}
+  .tabbar .tab{flex:1;text-align:center;padding:10px;border-radius:10px;font-size:13px;font-weight:700;
+    background:var(--surface);border:1px solid var(--line);color:var(--text-muted);cursor:pointer;}
+  .tabbar .tab.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+  .list-row{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:13px 14px;
+    margin-bottom:9px;display:flex;align-items:center;gap:10px;cursor:pointer;}
+  .list-row .main{flex:1;min-width:0;}
+  .list-row .main .t1{font-size:13.5px;font-weight:700;margin:0 0 2px;}
+  .list-row .main .t2{font-size:12px;color:var(--text-muted);margin:0;}
+  .fab{position:fixed;bottom:96px;right:calc(50% - 240px + 18px);width:52px;height:52px;border-radius:50%;
+    background:var(--accent);color:#fff;font-size:26px;display:flex;align-items:center;justify-content:center;
+    box-shadow:0 6px 18px rgba(1,161,158,.4);border:none;cursor:pointer;z-index:15;}
+  @media (max-width:520px){ .fab{ right:20px; } }
 </style>
 </head>
 <body>
 <div id="app">
 
+  <!-- TOPBAR (oculto na tela de login) -->
   <div class="topbar" id="topbar" style="display:none;">
     <div class="back" id="backBtn">←</div>
     <div class="titles">
-      <h1 id="topTitle">Visita</h1>
+      <h1 id="topTitle">Sensorweb</h1>
       <p id="topSub" class="mono">—</p>
     </div>
-    <div class="badge" id="topBadge">0/0</div>
+    <div class="badge" id="topBadge" style="display:none;">0/0</div>
+    <span class="logout-link" id="logoutLink">Sair</span>
   </div>
 
   <main>
 
-    <!-- TELA 1 -->
-    <section class="screen active" id="screen-link">
-      <div class="field-card" id="camWarning" style="display:none;border-color:var(--warn);">
-        <h3 style="color:var(--warn);">CÂMERA INDISPONÍVEL NESTE ACESSO</h3>
-        <p style="font-size:12.5px;color:var(--text-muted);margin:0;" id="camWarningText"></p>
+    <!-- ===================== LOGIN ===================== -->
+    <section class="screen active" id="screen-login">
+      <div class="login-hero">
+        <svg class="mark" viewBox="0 0 40 56" xmlns="http://www.w3.org/2000/svg" fill="none">
+          <line x1="20" y1="2" x2="20" y2="12" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+          <rect x="6" y="12" width="28" height="40" rx="12" stroke="currentColor" stroke-width="3"/>
+          <circle cx="16" cy="30" r="2.2" fill="currentColor"/>
+          <circle cx="24" cy="30" r="2.2" fill="currentColor"/>
+          <path d="M14 38 Q20 44 26 38" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+        </svg>
+        <p class="wordmark">sensorweb</p>
+        <p class="claim">conectando ambientes, dispositivos e pessoas</p>
       </div>
 
-      <div class="field-card" id="resumeBanner" style="display:none;border-color:var(--accent);">
-        <h3 style="color:var(--accent);">VISITA EM ANDAMENTO ENCONTRADA</h3>
-        <p style="font-size:12.5px;color:var(--text-muted);margin:0 0 12px;" id="resumeText">
-          Há progresso salvo neste aparelho.</p>
-        <div class="row-2">
-          <button class="btn btn-ok btn-sm" id="resumeBtn">Continuar</button>
-          <button class="btn btn-ghost btn-sm" id="discardBtn">Descartar</button>
+      <div class="login-form">
+        <label for="loginInput">Usuário</label>
+        <input type="text" id="loginInput" placeholder="seu.login" autocapitalize="none">
+
+        <label for="senhaInput">Senha</label>
+        <input type="password" id="senhaInput" placeholder="••••••••">
+
+        <div style="margin-top:22px;">
+          <button class="btn btn-primary" id="loginBtn">Entrar</button>
         </div>
+        <div class="hint" id="loginError" style="color:var(--danger);display:none;"></div>
+
+        <details class="server-config">
+          <summary>Configuração do servidor</summary>
+          <div class="inner">
+            <label style="margin-top:8px;">URL do Apps Script central</label>
+            <input type="text" id="serverUrlInput" placeholder="https://script.google.com/macros/s/.../exec">
+            <div class="hint">Configurado uma única vez por dispositivo. Peça essa URL ao administrador.</div>
+            <div style="margin-top:12px;"><button class="btn btn-ghost btn-sm" id="saveServerBtn">Salvar</button></div>
+          </div>
+        </details>
       </div>
-
-      <div class="hero">
-        <div class="tag">NOVA VISITA</div>
-        <h2>Cole o link da planilha desta visita</h2>
-        <p>Cada visita programada tem sua própria planilha no Google Sheets, com os pontos, transmissores e sondas já cadastrados. Cole o link para carregar os dados.</p>
-      </div>
-
-      <label for="sheetLink">Link do Google Sheets</label>
-      <input type="text" id="sheetLink" placeholder="https://docs.google.com/spreadsheets/d/..." class="mono"
-        value="https://docs.google.com/spreadsheets/d/12njBP5j0nknIOHxjCRs8hUioj4CIajqyqSBVnyAWPJU/edit">
-
-      <label for="techName">Técnico responsável</label>
-      <input type="text" id="techName" placeholder="Seu nome">
-
-      <label for="scriptUrl">URL do Apps Script (Web App)</label>
-      <input type="text" id="scriptUrl" placeholder="https://script.google.com/macros/s/.../exec" class="mono">
-      <div class="hint">Cole aqui a URL gerada ao publicar o Apps Script. Sem essa URL, a sincronização roda em modo de demonstração.</div>
-
-      <div style="margin-top:24px;">
-        <button class="btn btn-primary" id="loadSheetBtn">Carregar planilha</button>
-      </div>
-      <div class="hint">Este protótipo usa como exemplo a planilha "Programada ICESP - Itaci" (53 pontos). Piloto limitado às colunas A–F: XID, Nome do Ponto, Transmissor Antigo, Transmissor Novo, Sonda Antiga, Sonda Nova.</div>
     </section>
 
-    <!-- TELA 2 -->
-    <section class="screen" id="screen-list">
-      <div class="field-card" style="margin-bottom:18px;">
-        <h3 style="margin-bottom:10px;">DADOS DA VISITA</h3>
-        <div class="info-line"><span class="k">Unidade</span><span class="v" id="unidadeVal">—</span></div>
-        <div class="info-line"><span class="k">Responsável</span><span class="v" id="responsavelVal">—</span></div>
-        <div class="info-line"><span class="k">ID Zeev</span><span class="v" id="idZeevVal">—</span></div>
+    <!-- ===================== TÉCNICO: MINHAS DEMANDAS ===================== -->
+    <section class="screen" id="screen-tecnico-home">
+      <div class="hero" style="padding-top:6px;">
+        <div class="tag">MINHAS DEMANDAS</div>
+        <h2 id="tecnicoSaudacao" style="font-size:20px;">Olá</h2>
+        <p>Toque numa demanda para começar a coletar os pontos.</p>
       </div>
+      <div id="tecnicoDemandasList"></div>
+    </section>
 
+    <!-- ===================== LISTA DE PONTOS DE UMA DEMANDA ===================== -->
+    <section class="screen" id="screen-list">
       <div class="progress-row">
-        <span style="font-size:13px;font-weight:600;">Pontos de coleta</span>
+        <span style="font-size:13px;font-weight:700;">Pontos de coleta</span>
         <span class="count" id="progressCount">0 de 0 concluídos</span>
       </div>
       <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
@@ -241,11 +275,10 @@
       <div class="point-list" id="pointList"></div>
     </section>
 
-    <!-- TELA 3 -->
+    <!-- ===================== CAPTURA DE PONTO ===================== -->
     <section class="screen" id="screen-capture">
-
       <div class="field-card">
-        <h3>REFERÊNCIA DO PONTO (cadastro atual)</h3>
+        <h3>Referência do ponto (cadastro atual)</h3>
         <div class="ref-box">
           <div class="info-line"><span class="k">XID</span><span class="v" id="refXid">—</span></div>
           <div class="info-line"><span class="k">Transmissor antigo</span><span class="v" id="refTransAntigo">—</span></div>
@@ -254,7 +287,7 @@
       </div>
 
       <div class="field-card">
-        <h3>TRANSMISSOR NOVO</h3>
+        <h3>Transmissor novo</h3>
         <div class="scan-field">
           <input type="text" id="transNovoInput" class="mono" placeholder="Escaneie ou digite o código">
           <div class="scan-btn" data-target="transNovoInput" data-label="Transmissor novo">▤</div>
@@ -262,7 +295,7 @@
       </div>
 
       <div class="field-card">
-        <h3>SONDA NOVA</h3>
+        <h3>Sonda nova</h3>
         <div class="scan-field">
           <input type="text" id="sondaNovaInput" class="mono" placeholder="Escaneie ou digite o código">
           <div class="scan-btn" data-target="sondaNovaInput" data-label="Sonda nova">▤</div>
@@ -271,7 +304,7 @@
       </div>
 
       <div class="field-card">
-        <h3>FOTO DO PONTO</h3>
+        <h3>Foto do ponto</h3>
         <div class="photo-box" id="photoBox">
           <div class="photo-placeholder">Nenhuma foto registrada</div>
         </div>
@@ -281,7 +314,7 @@
       <canvas id="canvasEl"></canvas>
     </section>
 
-    <!-- TELA 4 -->
+    <!-- ===================== RESUMO / SINCRONIZAR ===================== -->
     <section class="screen" id="screen-summary">
       <div class="hero" style="padding-top:4px;">
         <div class="tag">RESUMO DA VISITA</div>
@@ -292,6 +325,75 @@
 
       <div class="payload-toggle" id="payloadToggle">Ver dados que seriam enviados para o Sheets ▾</div>
       <div class="payload" id="payloadBox"></div>
+    </section>
+
+    <!-- ===================== ADMIN: HOME ===================== -->
+    <section class="screen" id="screen-admin-home">
+      <div class="hero" style="padding-top:6px;">
+        <div class="tag">PAINEL ADMINISTRATIVO</div>
+        <h2 style="font-size:20px;">Demandas e usuários</h2>
+      </div>
+      <div class="tabbar">
+        <div class="tab active" data-admin-tab="demandas">Demandas</div>
+        <div class="tab" data-admin-tab="usuarios">Usuários</div>
+      </div>
+
+      <div id="adminDemandasTab"></div>
+      <div id="adminUsuariosTab" style="display:none;"></div>
+    </section>
+
+    <!-- ===================== ADMIN: FORM DEMANDA ===================== -->
+    <section class="screen" id="screen-admin-demanda-form">
+      <div class="hero" style="padding-top:6px;">
+        <div class="tag" id="demandaFormTag">NOVA DEMANDA</div>
+        <h2 style="font-size:20px;" id="demandaFormTitle">Cadastrar demanda</h2>
+      </div>
+
+      <label>Nome / Unidade</label>
+      <input type="text" id="demandaNomeInput" placeholder="Ex: ICESP - Itaci">
+
+      <label>Link da planilha de pontos (Google Sheets)</label>
+      <input type="text" id="demandaLinkInput" class="mono" placeholder="https://docs.google.com/spreadsheets/d/...">
+
+      <label>Técnico responsável</label>
+      <select id="demandaTecnicoSelect"></select>
+
+      <div style="margin-top:24px;">
+        <button class="btn btn-primary" id="salvarDemandaBtn">Salvar demanda</button>
+      </div>
+      <div style="margin-top:10px;" id="removerDemandaWrap">
+        <button class="btn btn-ghost btn-sm" id="removerDemandaBtn" style="color:var(--danger);">Remover demanda</button>
+      </div>
+    </section>
+
+    <!-- ===================== ADMIN: FORM USUÁRIO ===================== -->
+    <section class="screen" id="screen-admin-usuario-form">
+      <div class="hero" style="padding-top:6px;">
+        <div class="tag" id="usuarioFormTag">NOVO USUÁRIO</div>
+        <h2 style="font-size:20px;" id="usuarioFormTitle">Cadastrar usuário</h2>
+      </div>
+
+      <label>Nome</label>
+      <input type="text" id="usuarioNomeInput" placeholder="Nome completo">
+
+      <label>Login</label>
+      <input type="text" id="usuarioLoginInput" placeholder="usuario.login" autocapitalize="none">
+
+      <label>Senha <span id="senhaOpcionalTag" style="display:none;">(deixe em branco para manter a atual)</span></label>
+      <input type="password" id="usuarioSenhaInput" placeholder="••••••••">
+
+      <label>Papel</label>
+      <select id="usuarioPapelSelect">
+        <option value="tecnico">Técnico</option>
+        <option value="admin">Administrador</option>
+      </select>
+
+      <div style="margin-top:24px;">
+        <button class="btn btn-primary" id="salvarUsuarioBtn">Salvar usuário</button>
+      </div>
+      <div style="margin-top:10px;" id="removerUsuarioWrap">
+        <button class="btn btn-ghost btn-sm" id="removerUsuarioBtn" style="color:var(--danger);">Remover usuário</button>
+      </div>
     </section>
 
   </main>
@@ -307,9 +409,10 @@
     <button class="btn btn-ok" id="finishBtn">Concluir demanda</button>
   </div>
 
+  <button class="fab" id="fabAdmin" style="display:none;">+</button>
+
   <div class="toast" id="toast"></div>
 
-  <!-- MODAL CÂMERA (código + foto) -->
   <div class="cam-modal" id="camModal">
     <div class="cam-top">
       <span class="label" id="camLabel">Escaneando…</span>
@@ -323,117 +426,221 @@
   </div>
 
 </div>
-
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jsqr/1.4.0/jsQR.js"></script>
 <script>
 (function(){
-  const REAL_POINTS = [{"xid": "ID0155_TEMP", "nome": "[ITA-1SS.P.ENF.INT SN_154 - GLI  000000A0E290] T 7BD1 - Posto de enfermagem internação - Itaci", "transmissorAntigo": "F803320400037BD1", "sondaAntiga": "000000A0E290"}, {"xid": "ID0156_TEMP", "nome": "[ITA-1SS.P.ENF.INT SN_154 - 000000A5FB69] T 7BEB - Posto de enfermagem internação - Itaci", "transmissorAntigo": "F803320400037BEB", "sondaAntiga": "000000A5FB69"}, {"xid": "ID0157_TEMP", "nome": "[ITA-01°.INT.CIRCULAÇÃO.SN_155 - 000000A0C277] T 7C53 - INTdERNAÇÃO EOH - Circulação em frente ao leito 05 - Itaci", "transmissorAntigo": "F803320400037C53", "sondaAntiga": "000000A0C277"}, {"xid": "ID0158_TEMP", "nome": "[ITA-01°.INT.CIRCULAÇÃO.SN_155_GLI - 000000A5FB82] T 7E47 - INTERNAÇÃO EOH - Circulação em frente ao leito 05 - Itaci", "transmissorAntigo": "F803320400037E47", "sondaAntiga": "000000A5FB82"}, {"xid": "ID0161_TEMP", "nome": "[ITA-1SS.P.ENF.INT.ALOGENICO.SN_157 - 000000A01056] T 37E4C - CTCTH - Posto de enfermagem alogenicos - Itaci", "transmissorAntigo": "F803320400037E4C", "sondaAntiga": "000000A01056"}, {"xid": "ID0162_TEMP", "nome": "[ITA-1SS.P.ENF.INT.ALOGENICO.SN_157_GLI - 000000A5AFB4] T 37E45 - CTCTH - Posto de enfermagem alogenicos - Itaci", "transmissorAntigo": "F803320400037E45", "sondaAntiga": "000000A5AFB4"}, {"xid": "ID0163_TEMP", "nome": "[ITA-01°.FARM.QUIMIO.SN_158 - 000000A0E2FF] T 7BD8 - Farmácia - Manipulação Quimioterapia - Itaci", "transmissorAntigo": "F803320400037BD8", "sondaAntiga": "000000A0E2FF"}, {"xid": "ID0164_TEMP", "nome": "[ITA-01°.FARM.QUIMIO.SN_158_GLI - 000000A594CF] T 7BA8 - Farmácia - Manipulação Quimioterápico - Itaci", "transmissorAntigo": "F803320400037BA8", "sondaAntiga": "000000A594CF"}, {"xid": "ID0165_TEMP", "nome": "[ITA-01°.FARM.QUIMIO.SN_159 - 000000A566BE] T 37C71 - Farmácia - Manipulação de Quimioterapia - Itaci", "transmissorAntigo": "F803320400037C71", "sondaAntiga": "000000A566BE"}, {"xid": "ID0166_TEMP", "nome": "[ITA-01°.FARM.QUIMIO.SN_159_GLI - 000000A57818] T 37BE2 - Farmácia - Manipulaçõa de Quimioterapia  - Itaci", "transmissorAntigo": "F803320400037BE2", "sondaAntiga": "000000A57818"}, {"xid": "ID0167_TEMP", "nome": "[ITA-01°.FARM.QUIMIO.SN_160 - 000000A5957B] - T 37986  - Farmácia - Manipulção de Quimioterápia - Itaci", "transmissorAntigo": "F803320400037986", "sondaAntiga": "000000A5957B"}, {"xid": "ID0168_TEMP", "nome": "[ITA-01°.FARM.QUIMIO.SN_160_GLI - 000000A09531] T 7E3E - Farmácia - Manipulação de Quimioterápia - Itaci", "transmissorAntigo": "F803320400037E3E", "sondaAntiga": "000000A09531"}, {"xid": "ID0169_TEMP", "nome": "[ITA-02°.LABORATORIO.SN_161 - 000000A0E4E8] T 7E42 - LABORATÓRIO - Itaci", "transmissorAntigo": "F803320400037E42", "sondaAntiga": "000000A0E4E8"}, {"xid": "ID0170_TEMP", "nome": "[ITA-02°.LABORATORIO.SN_161_GLI - 000000A0F817] T 7BE1 - LABORATÓRIO - Itaci", "transmissorAntigo": "F803320400037BE1", "sondaAntiga": "000000A0F817"}, {"xid": "ID0171_TEMP", "nome": "[ITA-02°.LABORATORIO.SN_162 - 0000009FAA24] T 7E4E - LABORATÓRIO - Itaci", "transmissorAntigo": "F803320400037E4E", "sondaAntiga": "0000009FAA24"}, {"xid": "ID0172_TEMP", "nome": "[ITA-02°.LABORATORIO.SN_162_GLI - 00000C7CA43F] T 7C75 - LABORATÓRIO - Itaci", "transmissorAntigo": "F803320400037C75", "sondaAntiga": "00000C7CA43F"}, {"xid": "ID0173_TEMP", "nome": "[ITA-1SS.FARMACIA.SN_165 - 000000A085E6] T 7B7F - SUBSOLO - FARMÁCIA - Itaci", "transmissorAntigo": "F803320400037B7F", "sondaAntiga": "000000A085E6"}, {"xid": "ID0174_TEMP", "nome": "[ITA-1SS.FARMACIA.SN_165_GLI - 0000009FB357] T 7C3B - SUBSOLO - FARMÁCIA - Itaci", "transmissorAntigo": "F803320400037C3B", "sondaAntiga": "0000009FB357"}, {"xid": "ID0177_TEMP", "nome": "[ITA-1SS.FARMACIA.SN_163 - 000000A0FAC6] T 7E4C - SUBSOLO - FARMÁCIA - Itaci", "transmissorAntigo": "F803320400037E4A", "sondaAntiga": "000000A0FAC6"}, {"xid": "ID0178_TEMP", "nome": "[ITA-1SS.FARMACIA.SN_163_GLI - 000000A549AD] T 797F - SUBSOLO - FARMÁCIA - Itaci", "transmissorAntigo": "F80332040003797F", "sondaAntiga": "000000A549AD"}, {"xid": "ID0179_TEMP", "nome": "[ITA-1°.INTER.LOG.SN_166 - 000000A62EAC] T 7BDB - Intermediário - Logistica - Itaci", "transmissorAntigo": "F803320400037BDB", "sondaAntiga": "000000A62EAC"}, {"xid": "ID0180_TEMP", "nome": "[ITA-1°.INTER.LOG.SN_166_GLI - 000000A54C7A] T 7BF4 - Intermediário - Logistica - Itaci", "transmissorAntigo": "F803320400037BF4", "sondaAntiga": "000000A54C7A"}, {"xid": "ID0181_TEMP", "nome": "[ITA-1°.INTER.LOG.SN_167 - 000000A5FDEE] T 7B7C - Intermediário - Logistica - Itaci", "transmissorAntigo": "F803320400037B7C", "sondaAntiga": "000000A5FDEE"}, {"xid": "ID0182_TEMP", "nome": "[ITA-1°.INTER.LOG.SN_167_GLI - 000000A56A4F] - T 7BBA - Intermediário - Logistica - Itaci", "transmissorAntigo": "F803320400037BBA", "sondaAntiga": "000000A56A4F"}, {"xid": "ID0183_TEMP", "nome": "[ITA-1°.GUARDA DE CAMA.BACKUP_SN_168 - Amb - 4B5401010003D83E] T 3C385  - Itaci", "transmissorAntigo": "F80332040003C385", "sondaAntiga": "4B5401010003D83E"}, {"xid": "ID0184_UMID", "nome": "[ITA-1°.GUARDA DE CAMA.BACKUP_SN_168 - Umid - 4B5401010003D83E] T 3C85  - Itaci", "transmissorAntigo": "F80332040003C385", "sondaAntiga": "4B5401010003D83E"}, {"xid": "ID0185_TEMP", "nome": "[ITA-1°.GUARDA DE CAMA.BACKUP_SN_169 - Amb - 4B5401010003A1D5]  - Itaci", "transmissorAntigo": "F80332040003465E", "sondaAntiga": "4B5401010003A1D5"}, {"xid": "ID0186_UMID", "nome": "[ITA-1°.GUARDA DE CAMA.BACKUP_SN_169 - Umid- 4B5401010003A1D5]  - Itaci", "transmissorAntigo": "F80332040003465E", "sondaAntiga": "4B5401010003A1D5"}, {"xid": "ID0187_TEMP", "nome": "[Amb - 4B5401010003C8A7] T 7BE9 - Intermediario Logística - Itaci", "transmissorAntigo": "F803320400037BE9", "sondaAntiga": "4B5401010003C8A7"}, {"xid": "ID0188_UMID", "nome": "[Umid - 4B5401010003C8A7] T 7BE9 - Intermediario Logística - Itaci", "transmissorAntigo": "F803320400037BE9", "sondaAntiga": "4B5401010003C8A7"}, {"xid": "ID0216_TEMP", "nome": "[Porta] CTIO Posto de Enfermagem Internação - Itaci", "transmissorAntigo": "F803320400037BEB", "sondaAntiga": ""}, {"xid": "ID0218_TEMP", "nome": "[Porta] ITA-1SS.P.ENF.INT.SN_155 - Itaci - Itaci", "transmissorAntigo": "F803320400037C53", "sondaAntiga": ""}, {"xid": "ID0220_TEMP", "nome": "[BACKUP] - Itaci", "transmissorAntigo": "F803320400037BB3", "sondaAntiga": ""}, {"xid": "ID0223_TEMP", "nome": "[Porta] ITA-1SS.P.ENF.INT.SN_157 - Itaci", "transmissorAntigo": "F803320400037E45", "sondaAntiga": ""}, {"xid": "ID0225_TEMP", "nome": "[Porta] ITA-1SS.P.ENF.INT.SN_158 - Itaci", "transmissorAntigo": "F803320400037BD8", "sondaAntiga": ""}, {"xid": "ID0229_TEMP", "nome": "[Porta] ITA-1SS.P.ENF.INT.SN_159 - Itaci", "transmissorAntigo": "F803320400037C71", "sondaAntiga": ""}, {"xid": "ID0233_TEMP", "nome": "[Porta] ITA-1SS.P.ENF.INT.SN_160 - Itaci", "transmissorAntigo": "F803320400037986", "sondaAntiga": ""}, {"xid": "ID0238_TEMP", "nome": "[Porta]  ITA-1SS.P.ENF.INT.SN_166_GLI - Itaci", "transmissorAntigo": "F803320400037BF4", "sondaAntiga": ""}, {"xid": "ID0239_TEMP", "nome": "[Porta] ITA-1SS.P.ENF.INT.SN_163 - Itaci", "transmissorAntigo": "F803320400037E4A", "sondaAntiga": ""}, {"xid": "ID0240_TEMP", "nome": "[Porta  ] TA-1SS.P.ENF.INT.SN_161 - Itaci", "transmissorAntigo": "F803320400037E42", "sondaAntiga": ""}, {"xid": "ID0241_TEMP", "nome": "[Porta] ITA-1SS.P.ENF.INT.SN_167_GLI - Itaci", "transmissorAntigo": "F803320400037BBA", "sondaAntiga": ""}, {"xid": "ID0242_TEMP", "nome": "[Porta]  ITA-1SS.P.ENF.INT.SN_162 - Itaci", "transmissorAntigo": "F803320400037E4E", "sondaAntiga": ""}, {"xid": "ID0243_TEMP", "nome": "[Porta] Sensor de Porta - Itaci", "transmissorAntigo": "F803320400037B7F", "sondaAntiga": ""}, {"xid": "ID7092_TEMP", "nome": "[Ambiente 1° SS - Farmácia 4B5401010003A1D5] T 3465E - Farmácia 1° SS - Itaci", "transmissorAntigo": "F80332040003465E", "sondaAntiga": "4B5401010003A1D5"}, {"xid": "ID7093_UMID", "nome": "[Umidade 1° SS - Farmácia - 4B5401010003A1D5] T 3465E - Farmácia 1° SS - Itaci", "transmissorAntigo": "F80332040003465E", "sondaAntiga": "4B5401010003A1D5"}, {"xid": "ID7097_TEMP", "nome": "[Amb - 4B5401010003C8A6] Laboratório de Pesquisa Clínica - Icesp - Itaci", "transmissorAntigo": "F803320400038B54", "sondaAntiga": "4B5401010003C8A6"}, {"xid": "ID7098_UMID", "nome": "[Umid - 4B5401010003C8A6] Laboratório de Pesquisa Clínica - Icesp - Itaci", "transmissorAntigo": "F803320400038B54", "sondaAntiga": "4B5401010003C8A6"}, {"xid": "ID7099_TEMP", "nome": "[Geladeira SN_169 - 000000A007A9] Laboratório de Pesquisa Clínica - Icesp - Itaci", "transmissorAntigo": "F803320400038E78", "sondaAntiga": "000000A007A9"}, {"xid": "ID7100_TEMP", "nome": "[Porta] Laboratório de Pesquisa Clínica - Icesp - Itaci", "transmissorAntigo": "F803320400038E78", "sondaAntiga": "PORTA"}, {"xid": "ID7101_TEMP", "nome": "[Ultrafreezer - SN_170 - DD24C5C1BFFF] Laboratório de Pesquisa Clínica - Icesp - Itaci", "transmissorAntigo": "F80332040003A065", "sondaAntiga": "DD24C5C1BFFF"}, {"xid": "ID7102_TEMP", "nome": "[Porta] Laboratório de Pesquisa Clínica - Icesp - Itaci", "transmissorAntigo": "F80332040003A065", "sondaAntiga": "PORTA"}, {"xid": "ID7103_TEMP", "nome": "[Freezer SN_168 - 000000A078FD] Laboratório de Pesquisa Clínica - Icesp - Itaci", "transmissorAntigo": "F803320400038E76", "sondaAntiga": "000000A078FD"}, {"xid": "ID7104_TEMP", "nome": "[Porta] Laboratório de Pesquisa Clínica - Icesp - Itaci", "transmissorAntigo": "F803320400038E76", "sondaAntiga": "PORTA"}];
-  const VISIT_HEADER = { unidade:'ICESP - Itaci', responsavel:'Gabriel Brasil', idZeev:'18219' };
+  const $ = id => document.getElementById(id);
 
+  // ---------------- estado ----------------
+  let serverUrl = localStorage.getItem('sensorweb_server_url') || '';
+  let session = null;
+  try{ session = JSON.parse(localStorage.getItem('sensorweb_session') || 'null'); }catch(e){ session = null; }
+
+  let demandas = [];          // demandas do técnico logado
+  let demandasAdmin = [];     // cache admin
+  let usuarios = [];          // cache admin
+  let currentDemanda = null;
   let points = [];
   let currentPointId = null;
-  let currentSheetId = null;
-  let scriptUrl = null;
-  let stream = null;
-  let scanning = false;
-  let camMode = null; // 'code' | 'photo'
-  let camTargetInputId = null;
+
+  let editingDemandaId = null;
+  let editingUsuarioLoginOriginal = null;
+  let adminActiveTab = 'demandas';
+
   let listFilter = 'all';
   let searchQuery = '';
+
+  let stream = null;
+  let scanning = false;
+  let camMode = null;
+  let camTargetInputId = null;
   let barcodeDetector = null;
   if ('BarcodeDetector' in window) {
     try { barcodeDetector = new BarcodeDetector({formats:['qr_code','ean_13','ean_8','code_128','code_39','upc_a']}); } catch(e){}
   }
 
-  const $ = id => document.getElementById(id);
-  const screens = ['link','list','capture','summary'];
-  const footers = {list:'footer-list',capture:'footer-capture',summary:'footer-summary'};
+  let screenStack = [];
+  let currentScreenName = 'login';
+  const footers = {list:'footer-list', capture:'footer-capture', summary:'footer-summary'};
 
-  function extractSheetId(url){
-    const m = url.match(/\/d\/([a-zA-Z0-9-_]+)/);
-    return m ? m[1] : null;
-  }
-
-  // ---------- persistência local (sobrevive a fechar o app / voltar a tela) ----------
-  const STORAGE_KEY = 'coleta_sensores_v1';
-  function persist(){
-    try{
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({
-        sheetLink: $('sheetLink').value,
-        techName: $('techName').value,
-        scriptUrl: scriptUrl,
-        currentSheetId: currentSheetId,
-        points: points
-      }));
-    }catch(e){ /* armazenamento indisponível: segue sem persistir */ }
-  }
-  function tryRestore(){
-    try{
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if(!raw) return false;
-      const state = JSON.parse(raw);
-      if(!state.points || !state.points.length) return false;
-      points = state.points;
-      currentSheetId = state.currentSheetId;
-      scriptUrl = state.scriptUrl;
-      if(state.sheetLink) $('sheetLink').value = state.sheetLink;
-      if(state.techName) $('techName').value = state.techName;
-      return true;
-    }catch(e){ return false; }
-  }
-  function clearPersisted(){
-    try{ localStorage.removeItem(STORAGE_KEY); }catch(e){}
-  }
-
-  function enterVisit(){
-    $('unidadeVal').textContent = VISIT_HEADER.unidade;
-    $('responsavelVal').textContent = VISIT_HEADER.responsavel;
-    $('idZeevVal').textContent = VISIT_HEADER.idZeev;
-    $('topTitle').textContent = VISIT_HEADER.unidade;
-    $('topSub').textContent = 'ID Zeev '+VISIT_HEADER.idZeev+' · '+($('techName').value.trim() || 'técnico não informado');
-    renderList();
-    showScreen('list');
-  }
-
-  function showScreen(name){
-    screens.forEach(s=> $('screen-'+s).classList.toggle('active', s===name));
-    Object.values(footers).forEach(f=>$(f).style.display='none');
-    if(footers[name]) $(footers[name]).style.display='block';
-    $('topbar').style.display = name==='link' ? 'none' : 'flex';
-    $('backBtn').style.visibility = name==='list' ? 'hidden' : 'visible';
-    window.scrollTo(0,0);
-  }
+  function emptyHtml(msg){ return '<div class="empty"><div class="icon">▦</div>'+msg+'</div>'; }
+  function statusClass(s){ return s==='concluido' ? 'done' : (s==='em_andamento' ? 'em_andamento' : 'pending'); }
+  function statusLabel(s){ return s==='concluido' ? 'Concluído' : (s==='em_andamento' ? 'Em andamento' : 'Pendente'); }
 
   function toast(msg){
     const t=$('toast'); t.textContent=msg; t.classList.add('show');
-    clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'),2400);
+    clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'),2600);
   }
 
-  // ---------- tela 1 ----------
-  $('loadSheetBtn').addEventListener('click', ()=>{
-    const url = $('sheetLink').value.trim();
-    if(!url){ toast('Cole o link da planilha para continuar'); return; }
-    currentSheetId = extractSheetId(url) || url.trim();
-    scriptUrl = $('scriptUrl').value.trim() || null;
-    points = REAL_POINTS.map((p,i)=>({
-      id:'p'+i, xid:p.xid, nome:p.nome,
-      transmissorAntigo:p.transmissorAntigo, sondaAntiga:p.sondaAntiga,
-      transNovo:'', sondaNova:'', noSonda:false, photo:null, status:'pending'
-    }));
-    searchQuery=''; $('searchInput').value='';
-    persist();
-    enterVisit();
+  // ---------------- API ----------------
+  async function callApi(action, extra){
+    if(!serverUrl) throw new Error('Configure a URL do servidor na tela de login');
+    const body = Object.assign({action}, extra||{});
+    let r;
+    try{
+      r = await fetch(serverUrl, { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify(body) });
+    }catch(e){
+      throw new Error('Não foi possível conectar ao servidor. Verifique a URL e a conexão.');
+    }
+    const text = await r.text();
+    let data;
+    try{ data = JSON.parse(text); }
+    catch(e){ throw new Error('Resposta inválida do servidor (HTTP '+r.status+').'); }
+    if(!data.success) throw new Error(data.error || 'Erro desconhecido do servidor');
+    return data;
+  }
+
+  // ---------------- navegação ----------------
+  const SCREENS = ['login','tecnico-home','list','capture','summary','admin-home','admin-demanda-form','admin-usuario-form'];
+
+  function showScreen(name){
+    SCREENS.forEach(s => $('screen-'+s).classList.toggle('active', s===name));
+    Object.values(footers).forEach(f=>$(f).style.display='none');
+    if(footers[name]) $(footers[name]).style.display='block';
+    $('topbar').style.display = name==='login' ? 'none' : 'flex';
+    $('backBtn').style.visibility = (name==='login' || screenStack.length===0) ? 'hidden' : 'visible';
+    $('fabAdmin').style.display = (session && session.papel==='admin' && name==='admin-home') ? 'flex' : 'none';
+    window.scrollTo(0,0);
+  }
+  function goTo(name){ screenStack.push(currentScreenName); currentScreenName = name; showScreen(name); }
+  function goToRoot(name){ screenStack = []; currentScreenName = name; showScreen(name); }
+  function goBack(){
+    if(!screenStack.length) return;
+    const prev = screenStack.pop();
+    currentScreenName = prev;
+    showScreen(prev);
+    if(prev==='list') renderList();
+    if(prev==='tecnico-home') renderTecnicoDemandasList();
+    if(prev==='admin-home') renderAdminActiveTab();
+  }
+  $('backBtn').addEventListener('click', goBack);
+
+  // ---------------- login ----------------
+  $('serverUrlInput').value = serverUrl;
+  $('saveServerBtn').addEventListener('click', ()=>{
+    serverUrl = $('serverUrlInput').value.trim();
+    localStorage.setItem('sensorweb_server_url', serverUrl);
+    toast('URL do servidor salva neste dispositivo');
   });
 
-  $('resumeBtn').addEventListener('click', enterVisit);
-  $('discardBtn').addEventListener('click', ()=>{
-    clearPersisted();
-    points = [];
-    $('resumeBanner').style.display = 'none';
-    toast('Visita anterior descartada');
+  function showLoginError(msg){ $('loginError').textContent = msg; $('loginError').style.display='block'; }
+
+  $('loginBtn').addEventListener('click', async ()=>{
+    const login = $('loginInput').value.trim();
+    const senha = $('senhaInput').value;
+    if(!login || !senha){ showLoginError('Preencha usuário e senha'); return; }
+    if(!serverUrl){ showLoginError('Configure a URL do servidor logo abaixo antes de entrar'); return; }
+    const btn = $('loginBtn');
+    btn.disabled = true; btn.textContent = 'Entrando…';
+    try{
+      const data = await callApi('login', {login, senha});
+      session = { login:data.usuario.login, senha, nome:data.usuario.nome, papel:data.usuario.papel };
+      localStorage.setItem('sensorweb_session', JSON.stringify(session));
+      $('loginError').style.display='none';
+      await afterLogin();
+    }catch(err){
+      showLoginError(err.message);
+    }
+    btn.disabled=false; btn.textContent='Entrar';
   });
 
-  // ---------- tela 2 ----------
+  $('logoutLink').addEventListener('click', ()=>{
+    session = null;
+    localStorage.removeItem('sensorweb_session');
+    $('senhaInput').value = '';
+    screenStack = [];
+    goToRoot('login');
+  });
+
+  async function afterLogin(){
+    if(session.papel === 'admin'){
+      goToRoot('admin-home');
+      await loadAdminUsuarios();
+      await loadAdminDemandas();
+    } else {
+      goToRoot('tecnico-home');
+      await loadTecnicoDemandas();
+    }
+  }
+
+  // ---------------- técnico: minhas demandas ----------------
+  async function loadTecnicoDemandas(){
+    try{
+      const data = await callApi('listarDemandas', {login:session.login, senha:session.senha});
+      demandas = data.demandas;
+      $('tecnicoSaudacao').textContent = 'Olá, ' + (session.nome||'').split(' ')[0];
+      renderTecnicoDemandasList();
+    }catch(err){ toast(err.message); }
+  }
+
+  function renderTecnicoDemandasList(){
+    const wrap = $('tecnicoDemandasList'); wrap.innerHTML='';
+    if(!demandas.length){ wrap.innerHTML = emptyHtml('Nenhuma demanda atribuída a você ainda.'); return; }
+    demandas.forEach(d=>{
+      const el = document.createElement('div');
+      el.className = 'list-row';
+      el.innerHTML = `
+        <div class="main">
+          <p class="t1">${d.nome}</p>
+          <p class="t2">${d.feitos||0} de ${d.total||0} pontos</p>
+        </div>
+        <span class="status-chip ${statusClass(d.status)}">${statusLabel(d.status)}</span>`;
+      el.addEventListener('click', ()=> abrirDemanda(d));
+      wrap.appendChild(el);
+    });
+  }
+
+  async function abrirDemanda(d){
+    currentDemanda = d;
+    toast('Carregando pontos…');
+    try{
+      const data = await callApi('getPontosDemanda', {login:session.login, senha:session.senha, sheetId:d.sheetId});
+      points = data.pontos.map((p,i)=>({
+        id:'p'+i, xid:p.xid, nome:p.nome,
+        transmissorAntigo:p.transmissorAntigo, sondaAntiga:p.sondaAntiga,
+        transNovo:p.transNovo||'', sondaNova:p.sondaNova||'', noSonda:false,
+        photo:null, status: p.transNovo ? 'done' : 'pending'
+      }));
+      restoreDraft();
+      $('topTitle').textContent = d.nome;
+      $('topSub').textContent = session.nome;
+      $('topBadge').style.display = 'inline-block';
+      searchQuery=''; $('searchInput').value='';
+      listFilter='all';
+      document.querySelectorAll('.filter-chip').forEach(c=>c.classList.toggle('active', c.dataset.filter==='all'));
+      goTo('list');
+      renderList();
+    }catch(err){ toast(err.message); }
+  }
+
+  // rascunho local (sobrevive a fechar o app antes de sincronizar)
+  function draftKey(){ return 'sw_draft_'+session.login+'_'+currentDemanda.sheetId; }
+  function persistDraft(){
+    try{
+      const draft = {};
+      points.forEach(p=>{ draft[p.xid] = {transNovo:p.transNovo, sondaNova:p.sondaNova, noSonda:p.noSonda, photo:p.photo, status:p.status}; });
+      localStorage.setItem(draftKey(), JSON.stringify(draft));
+    }catch(e){}
+  }
+  function restoreDraft(){
+    try{
+      const raw = localStorage.getItem(draftKey());
+      if(!raw) return;
+      const draft = JSON.parse(raw);
+      points.forEach(p=>{
+        const d = draft[p.xid];
+        if(!d) return;
+        if(!p.transNovo && d.transNovo) p.transNovo = d.transNovo;
+        if(!p.sondaNova && d.sondaNova) p.sondaNova = d.sondaNova;
+        if(d.noSonda) p.noSonda = true;
+        if(d.photo) p.photo = d.photo;
+        if(d.status==='done') p.status='done';
+      });
+    }catch(e){}
+  }
+  function clearDraft(){ try{ localStorage.removeItem(draftKey()); }catch(e){} }
+
+  // ---------------- lista de pontos ----------------
   function renderList(){
     const done = points.filter(p=>p.status==='done').length;
     $('progressCount').textContent = done+' de '+points.length+' concluídos';
@@ -447,25 +654,19 @@
     if(searchQuery){
       const q = searchQuery;
       list = list.filter(p=>
-        p.xid.toLowerCase().includes(q) ||
-        p.nome.toLowerCase().includes(q) ||
-        (p.transmissorAntigo||'').toLowerCase().includes(q) ||
-        (p.sondaAntiga||'').toLowerCase().includes(q) ||
-        (p.transNovo||'').toLowerCase().includes(q) ||
-        (p.sondaNova||'').toLowerCase().includes(q)
+        p.xid.toLowerCase().includes(q) || p.nome.toLowerCase().includes(q) ||
+        (p.transmissorAntigo||'').toLowerCase().includes(q) || (p.sondaAntiga||'').toLowerCase().includes(q) ||
+        (p.transNovo||'').toLowerCase().includes(q) || (p.sondaNova||'').toLowerCase().includes(q)
       );
     }
+    if(list.length===0){ wrap.innerHTML = emptyHtml('Nenhum ponto nesse filtro.'); return; }
 
-    if(list.length===0){
-      wrap.innerHTML = '<div class="empty"><div class="icon">📋</div>Nenhum ponto nesse filtro.</div>';
-      return;
-    }
     list.forEach(p=>{
       const el = document.createElement('div');
       el.className = 'point'+(p.status==='done'?' done':'');
       el.innerHTML = `
         <div class="point-info">
-          <p class="xid mono">${p.xid}</p>
+          <p class="xid">${p.xid}</p>
           <p class="name">${p.nome}</p>
         </div>
         <span class="status-chip ${p.status}">${p.status==='done'?'Concluído':'Pendente'}</span>`;
@@ -482,27 +683,16 @@
       renderList();
     });
   });
+  $('searchInput').addEventListener('input', e=>{ searchQuery = e.target.value.trim().toLowerCase(); renderList(); });
 
-  $('searchInput').addEventListener('input', e=>{
-    searchQuery = e.target.value.trim().toLowerCase();
-    renderList();
-  });
+  $('goSummaryBtn').addEventListener('click', ()=>{ goTo('summary'); renderSummary(); });
 
-  $('backBtn').addEventListener('click', ()=>{
-    const active = screens.find(s=>$('screen-'+s).classList.contains('active'));
-    if(active==='capture') showScreen('list');
-    else if(active==='summary') showScreen('list');
-    else showScreen('link');
-  });
-
-  $('goSummaryBtn').addEventListener('click', ()=>{ renderSummary(); showScreen('summary'); });
-
-  // ---------- tela 3 ----------
+  // ---------------- captura ----------------
   function openCapture(id){
     currentPointId = id;
     const p = points.find(x=>x.id===id);
     $('topTitle').textContent = p.xid;
-    $('topSub').textContent = VISIT_HEADER.unidade;
+    $('topSub').textContent = currentDemanda.nome;
 
     $('refXid').textContent = p.xid;
     $('refTransAntigo').textContent = p.transmissorAntigo || '—';
@@ -513,27 +703,24 @@
     $('noSondaCheck').checked = p.noSonda;
     $('sondaNovaInput').disabled = p.noSonda;
 
-    $('photoBox').innerHTML = p.photo
-      ? `<img src="${p.photo}">`
-      : `<div class="photo-placeholder">Nenhuma foto registrada</div>`;
+    $('photoBox').innerHTML = p.photo ? `<img src="${p.photo}">` : `<div class="photo-placeholder">Nenhuma foto registrada</div>`;
 
-    showScreen('capture');
+    goTo('capture');
   }
 
   $('noSondaCheck').addEventListener('change', e=>{
     $('sondaNovaInput').disabled = e.target.checked;
     if(e.target.checked) $('sondaNovaInput').value='';
     const p = points.find(x=>x.id===currentPointId);
-    if(p){ p.noSonda = e.target.checked; if(e.target.checked) p.sondaNova=''; persist(); }
+    if(p){ p.noSonda = e.target.checked; if(e.target.checked) p.sondaNova=''; persistDraft(); }
   });
-
   $('transNovoInput').addEventListener('input', e=>{
     const p = points.find(x=>x.id===currentPointId);
-    if(p){ p.transNovo = e.target.value; persist(); }
+    if(p){ p.transNovo = e.target.value; persistDraft(); }
   });
   $('sondaNovaInput').addEventListener('input', e=>{
     const p = points.find(x=>x.id===currentPointId);
-    if(p){ p.sondaNova = e.target.value; persist(); }
+    if(p){ p.sondaNova = e.target.value; persistDraft(); }
   });
 
   $('savePointBtn').addEventListener('click', ()=>{
@@ -543,18 +730,13 @@
     const sondaNova = $('sondaNovaInput').value.trim();
     if(!transNovo){ toast('Escaneie ou digite o transmissor novo'); return; }
     if(!noSonda && !sondaNova){ toast('Escaneie a sonda nova ou marque "não usa sonda separada"'); return; }
-
-    p.transNovo = transNovo;
-    p.sondaNova = noSonda ? '' : sondaNova;
-    p.noSonda = noSonda;
-    p.status = 'done';
-    persist();
-    renderList();
-    showScreen('list');
+    p.transNovo = transNovo; p.sondaNova = noSonda ? '' : sondaNova; p.noSonda = noSonda; p.status = 'done';
+    persistDraft();
     toast('Ponto salvo');
+    goBack();
   });
 
-  // ---------- modal câmera ----------
+  // ---------------- câmera (scan + foto) ----------------
   document.querySelectorAll('.scan-btn').forEach(btn=>{
     btn.addEventListener('click', ()=> openCam('code', btn.dataset.target, btn.dataset.label));
   });
@@ -574,11 +756,11 @@
       stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
     }catch(e){
       let msg = 'Não foi possível acessar a câmera neste dispositivo.';
-      if(e && e.name === 'NotAllowedError') msg = 'Permissão de câmera negada. Verifique as permissões do site nas configurações do navegador.';
-      else if(e && e.name === 'NotFoundError') msg = 'Nenhuma câmera encontrada neste dispositivo.';
-      else if(e && e.name === 'NotReadableError') msg = 'A câmera está sendo usada por outro aplicativo.';
-      else if(e && e.name === 'SecurityError') msg = 'Acesso à câmera bloqueado por segurança (a página precisa ser aberta via HTTPS).';
-      else if(!navigator.mediaDevices) msg = 'API de câmera indisponível neste navegador/contexto (endereço: '+location.protocol+'//'+location.host+').';
+      if(e && e.name==='NotAllowedError') msg='Permissão de câmera negada. Verifique as permissões do site.';
+      else if(e && e.name==='NotFoundError') msg='Nenhuma câmera encontrada neste dispositivo.';
+      else if(e && e.name==='NotReadableError') msg='A câmera está sendo usada por outro aplicativo.';
+      else if(e && e.name==='SecurityError') msg='Acesso à câmera bloqueado (a página precisa ser aberta via HTTPS).';
+      else if(!navigator.mediaDevices) msg='API de câmera indisponível neste navegador ('+location.protocol+'//'+location.host+').';
       toast(msg);
       return;
     }
@@ -602,9 +784,7 @@
       canvas.width = video.videoWidth; canvas.height = video.videoHeight;
       ctx.drawImage(video,0,0,canvas.width,canvas.height);
       if(barcodeDetector){
-        barcodeDetector.detect(canvas).then(codes=>{
-          if(codes && codes.length) onCodeDetected(codes[0].rawValue);
-        }).catch(()=>{});
+        barcodeDetector.detect(canvas).then(codes=>{ if(codes && codes.length) onCodeDetected(codes[0].rawValue); }).catch(()=>{});
       } else if(window.jsQR){
         const img = ctx.getImageData(0,0,canvas.width,canvas.height);
         const res = jsQR(img.data, img.width, img.height);
@@ -621,24 +801,18 @@
       el.value = value;
       el.dispatchEvent(new Event('input', {bubbles:true}));
     }
-    if(target === 'searchInput'){
-      toast('Buscando: '+value);
-      tryJumpToPoint(value);
-    } else {
-      toast('Código lido: '+value);
-    }
+    if(target === 'searchInput'){ toast('Buscando: '+value); tryJumpToPoint(value); }
+    else toast('Código lido: '+value);
     closeCam();
   }
 
   function tryJumpToPoint(code){
     const q = code.trim().toLowerCase();
     const matches = points.filter(p=>
-      p.xid.toLowerCase()===q ||
-      (p.transmissorAntigo||'').toLowerCase()===q ||
-      (p.sondaAntiga||'').toLowerCase()===q
+      p.xid.toLowerCase()===q || (p.transmissorAntigo||'').toLowerCase()===q || (p.sondaAntiga||'').toLowerCase()===q
     );
-    if(matches.length===1){ openCapture(matches[0].id); }
-    else if(matches.length===0){ toast('Nenhum ponto encontrado para esse código — lista filtrada por texto parcial'); }
+    if(matches.length===1) openCapture(matches[0].id);
+    else if(matches.length===0) toast('Nenhum ponto encontrado para esse código — lista filtrada por texto parcial');
   }
 
   function capturePhoto(){
@@ -650,12 +824,18 @@
     const p = points.find(x=>x.id===currentPointId);
     p.photo = dataUrl;
     $('photoBox').innerHTML = `<img src="${dataUrl}">`;
-    persist();
+    persistDraft();
     toast('Foto capturada');
     closeCam();
   }
 
-  // ---------- tela 4 ----------
+  // ---------------- resumo / sincronização ----------------
+  function buildRegistros(){
+    return points.filter(p=>p.status==='done').map(p=>({
+      xid:p.xid, transmissor_novo:p.transNovo, sonda_nova: p.noSonda ? '' : p.sondaNova, foto_base64: p.photo || null
+    }));
+  }
+
   function renderSummary(){
     const done = points.filter(p=>p.status==='done');
     $('summaryTitle').textContent = done.length===points.length ? 'Todos os pontos concluídos' : (done.length+' de '+points.length+' pontos concluídos');
@@ -664,31 +844,24 @@
       : 'Você ainda pode sincronizar parcialmente e completar depois.';
 
     const wrap = $('summaryList'); wrap.innerHTML='';
-    if(done.length===0){
-      wrap.innerHTML = '<div class="empty"><div class="icon">🔍</div>Nenhum ponto coletado ainda.</div>';
-    }
+    if(done.length===0){ wrap.innerHTML = emptyHtml('Nenhum ponto coletado ainda.'); }
     done.forEach(p=>{
       const el = document.createElement('div');
       el.className='summary-row';
       el.innerHTML = `
-        <div class="top"><span class="xid mono">${p.xid}</span></div>
+        <div class="top"><span class="xid">${p.xid}</span></div>
         <p class="name">${p.nome}</p>
         <div class="kv-grid">
           <span class="k">Transmissor novo</span><span class="v">${p.transNovo}</span>
           <span class="k">Sonda nova</span><span class="v">${p.noSonda?'não se aplica':p.sondaNova}</span>
         </div>
-        ${p.photo ? `<div class="thumb-strip"><img src="${p.photo}"></div>` : ''}
-      `;
+        ${p.photo ? `<div class="thumb-strip"><img src="${p.photo}"></div>` : ''}`;
       wrap.appendChild(el);
     });
 
     const payload = {
-      sheetId: currentSheetId,
-      aba: 'Relação de Pontos',
-      concluir: false,
-      registros: buildRegistros().map(r=> Object.assign({}, r, {
-        foto_base64: r.foto_base64 ? '[imagem base64 omitida na prévia]' : null
-      }))
+      sheetId: currentDemanda.sheetId, concluir:false,
+      registros: buildRegistros().map(r=> Object.assign({}, r, { foto_base64: r.foto_base64 ? '[imagem omitida na prévia]' : null }))
     };
     $('payloadBox').textContent = JSON.stringify(payload, null, 2);
   }
@@ -699,111 +872,236 @@
       ? 'Ocultar dados que seriam enviados ▴' : 'Ver dados que seriam enviados para o Sheets ▾';
   });
 
-  function buildRegistros(){
-    return points.filter(p=>p.status==='done').map(p=>({
-      xid:p.xid,
-      transmissor_novo:p.transNovo,
-      sonda_nova: p.noSonda ? '' : p.sondaNova,
-      foto_base64: p.photo || null
-    }));
-  }
-
   async function runSync(btn, finalize){
     const registros = buildRegistros();
     if(registros.length===0 && !finalize){ toast('Nenhum ponto para sincronizar'); return; }
-    if(!scriptUrl){
-      toast('Configure a URL do Apps Script na tela inicial antes de sincronizar');
-      return;
-    }
-
     const original = btn.textContent;
     btn.disabled = true; btn.textContent = finalize ? 'Concluindo…' : 'Enviando para a planilha…';
 
-    const payload = JSON.stringify({ sheetId: currentSheetId, aba:'Relação de Pontos', concluir: !!finalize, registros });
-    const headers = {'Content-Type':'text/plain;charset=utf-8'}; // evita preflight CORS
+    const payload = JSON.stringify({
+      action:'sincronizarPontos', login:session.login, senha:session.senha,
+      sheetId: currentDemanda.sheetId, concluir: !!finalize, registros
+    });
+    const headers = {'Content-Type':'text/plain;charset=utf-8'};
 
     try{
-      let data = null;
-      let confirmed = true;
-
+      let data=null, confirmed=true;
       try{
-        const r = await fetch(scriptUrl, { method:'POST', headers, body: payload });
+        const r = await fetch(serverUrl, { method:'POST', headers, body: payload });
         const text = await r.text();
         try{ data = JSON.parse(text); }
-        catch(e){
-          throw new Error('Resposta não era JSON (HTTP '+r.status+'). Verifique se a URL termina em /exec e se a implantação está com acesso "Qualquer pessoa".');
-        }
-        if(!r.ok || !data.success) throw new Error((data && data.error) || ('Erro HTTP '+r.status));
-      } catch(corsErr){
-        // fallback: o navegador pode estar bloqueando a leitura da resposta por CORS,
-        // mesmo que o Apps Script grave os dados normalmente. Tenta reenviar em modo
-        // "no-cors" — a gravação acontece, só não conseguimos ler a confirmação.
-        await fetch(scriptUrl, { method:'POST', mode:'no-cors', headers, body: payload });
+        catch(e){ throw new Error('Resposta inválida (HTTP '+r.status+').'); }
+        if(!data.success) throw new Error(data.error || 'Erro do servidor');
+      }catch(corsErr){
+        await fetch(serverUrl, { method:'POST', mode:'no-cors', headers, body: payload });
         confirmed = false;
       }
 
       if(finalize){
-        clearPersisted();
-        points = [];
-        toast(confirmed
-          ? 'Demanda concluída e sincronizada com a planilha'
-          : 'Demanda enviada — o navegador bloqueou a confirmação (CORS), confira na planilha se os dados chegaram');
-        setTimeout(()=>{ showScreen('link'); }, 900);
+        clearDraft();
+        toast(confirmed ? 'Demanda concluída e sincronizada com a planilha'
+          : 'Demanda enviada — sem confirmação (CORS). Confira a planilha.');
+        setTimeout(()=>{ goToRoot('tecnico-home'); loadTecnicoDemandas(); }, 900);
       } else {
-        persist();
+        persistDraft();
         if(confirmed){
-          const naoEncontrados = (data.results||[]).filter(r=>r.status==='nao_encontrado');
-          const semFoto = (data.results||[]).filter(r=> r.foto && r.foto.indexOf('erro')===0);
-          toast(naoEncontrados.length
-            ? (registros.length-naoEncontrados.length)+' gravado(s), '+naoEncontrados.length+' XID não encontrado na planilha'
-            : registros.length+' registro(s) gravados na planilha'+(semFoto.length?' (falha ao colar '+semFoto.length+' foto(s))':''));
+          const naoEnc = (data.results||[]).filter(r=>r.status==='nao_encontrado');
+          toast(naoEnc.length
+            ? (registros.length-naoEnc.length)+' gravado(s), '+naoEnc.length+' não encontrado(s) na planilha'
+            : registros.length+' registro(s) gravados na planilha');
           btn.textContent = '✓ Sincronizado com sucesso';
         } else {
-          toast('Enviado, mas o navegador bloqueou a confirmação (CORS). Confira na planilha se os dados chegaram.');
+          toast('Enviado, sem confirmação (CORS). Confira a planilha.');
           btn.textContent = '↑ Enviado (sem confirmação)';
         }
         setTimeout(()=>{ btn.disabled=false; btn.textContent=original; },2600);
       }
-    } catch(err){
+    }catch(err){
       btn.textContent = 'Falha';
-      toast(err.message || 'Não foi possível conectar ao Apps Script');
+      toast(err.message || 'Não foi possível sincronizar');
       setTimeout(()=>{ btn.disabled=false; btn.textContent=original; },3200);
     }
   }
 
   $('syncBtn').addEventListener('click', ()=> runSync($('syncBtn'), false));
   $('finishBtn').addEventListener('click', ()=>{
-    const done = points.filter(p=>p.status==='done').length;
-    const pendentes = points.length - done;
+    const pendentes = points.filter(p=>p.status!=='done').length;
     if(pendentes>0 && !confirm(pendentes+' ponto(s) ainda pendente(s). Concluir a demanda mesmo assim?')) return;
     runSync($('finishBtn'), true);
   });
 
-  function checkCameraSupport(){
-    const secure = window.isSecureContext;
-    const hasApi = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
-    if(secure && hasApi) return; // tudo certo, não mostra nada
-
-    let reason;
-    if(location.protocol === 'file:'){
-      reason = 'A página foi aberta como arquivo local (endereço começando com "file://"). Navegadores só liberam câmera em páginas servidas por HTTPS. Hospede este arquivo (ex: Netlify Drop, GitHub Pages) e abra pelo link https:// gerado.';
-    } else if(!secure){
-      reason = 'A conexão atual não é segura (não é HTTPS). Endereço: '+location.protocol+'//'+location.host+'. Abra o app por um link https:// para liberar a câmera.';
-    } else if(!hasApi){
-      reason = 'Este navegador não expõe a API de câmera nesta janela — comum quando a página é aberta dentro de uma prévia/app embutido (webview). Tente abrir o link diretamente no Chrome ou Safari, fora de qualquer app que esteja mostrando uma prévia da página.';
-    } else {
-      reason = 'Não foi possível detectar suporte à câmera neste navegador.';
-    }
-    $('camWarningText').textContent = reason;
-    $('camWarning').style.display = 'block';
+  // ---------------- admin: navegação de abas ----------------
+  document.querySelectorAll('.tab').forEach(tab=>{
+    tab.addEventListener('click', ()=>{
+      document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+      tab.classList.add('active');
+      adminActiveTab = tab.dataset.adminTab;
+      renderAdminActiveTab();
+    });
+  });
+  function renderAdminActiveTab(){
+    $('adminDemandasTab').style.display = adminActiveTab==='demandas' ? 'block':'none';
+    $('adminUsuariosTab').style.display = adminActiveTab==='usuarios' ? 'block':'none';
+    $('fabAdmin').style.display = 'flex';
   }
 
-  // ---------- inicialização ----------
-  checkCameraSupport();
-  if(tryRestore()){
-    const done = points.filter(p=>p.status==='done').length;
-    $('resumeText').textContent = done+' de '+points.length+' pontos preenchidos neste aparelho.';
-    $('resumeBanner').style.display = 'block';
+  $('fabAdmin').addEventListener('click', ()=>{
+    if(currentScreenName==='admin-home'){
+      if(adminActiveTab==='demandas') abrirFormDemanda(null);
+      else abrirFormUsuario(null);
+    }
+  });
+
+  // ---------------- admin: demandas ----------------
+  async function loadAdminDemandas(){
+    try{
+      const data = await callApi('listarDemandas', {login:session.login, senha:session.senha});
+      demandasAdmin = data.demandas;
+      renderAdminDemandas();
+    }catch(err){ toast(err.message); }
+  }
+  function renderAdminDemandas(){
+    const wrap = $('adminDemandasTab'); wrap.innerHTML='';
+    if(!demandasAdmin.length){ wrap.innerHTML = emptyHtml('Nenhuma demanda cadastrada. Toque em + para criar.'); return; }
+    demandasAdmin.forEach(d=>{
+      const tecnico = usuarios.find(u=>u.login===d.tecnicoLogin);
+      const el = document.createElement('div');
+      el.className='list-row';
+      el.innerHTML = `
+        <div class="main">
+          <p class="t1">${d.nome}</p>
+          <p class="t2">${tecnico?tecnico.nome:(d.tecnicoLogin||'sem técnico')} · ${d.feitos||0}/${d.total||0} pontos</p>
+        </div>
+        <span class="status-chip ${statusClass(d.status)}">${statusLabel(d.status)}</span>`;
+      el.addEventListener('click', ()=> abrirFormDemanda(d));
+      wrap.appendChild(el);
+    });
+  }
+
+  function preencherSelectTecnicos(selecionado){
+    const sel = $('demandaTecnicoSelect'); sel.innerHTML='';
+    const tecnicos = usuarios.filter(u=>u.papel==='tecnico');
+    if(!tecnicos.length){ sel.innerHTML = '<option value="">Nenhum técnico cadastrado</option>'; return; }
+    tecnicos.forEach(u=>{
+      const opt = document.createElement('option');
+      opt.value = u.login; opt.textContent = u.nome+' ('+u.login+')';
+      if(u.login===selecionado) opt.selected = true;
+      sel.appendChild(opt);
+    });
+  }
+
+  function abrirFormDemanda(d){
+    editingDemandaId = d ? d.id : null;
+    $('demandaFormTag').textContent = d ? 'EDITAR DEMANDA' : 'NOVA DEMANDA';
+    $('demandaFormTitle').textContent = d ? 'Editar demanda' : 'Cadastrar demanda';
+    $('demandaNomeInput').value = d ? d.nome : '';
+    $('demandaLinkInput').value = d ? ('https://docs.google.com/spreadsheets/d/'+d.sheetId+'/edit') : '';
+    preencherSelectTecnicos(d ? d.tecnicoLogin : null);
+    $('removerDemandaWrap').style.display = d ? 'block' : 'none';
+    goTo('admin-demanda-form');
+  }
+
+  $('salvarDemandaBtn').addEventListener('click', async ()=>{
+    const nome = $('demandaNomeInput').value.trim();
+    const link = $('demandaLinkInput').value.trim();
+    const tecnicoLogin = $('demandaTecnicoSelect').value;
+    if(!nome || !link || !tecnicoLogin){ toast('Preencha nome, link da planilha e técnico responsável'); return; }
+    try{
+      await callApi('salvarDemanda', {
+        login:session.login, senha:session.senha,
+        id: editingDemandaId || '', nome, linkPlanilha: link, tecnicoLogin
+      });
+      toast('Demanda salva');
+      goBack();
+      await loadAdminDemandas();
+    }catch(err){ toast(err.message); }
+  });
+
+  $('removerDemandaBtn').addEventListener('click', async ()=>{
+    if(!editingDemandaId) return;
+    if(!confirm('Remover esta demanda? Isso não apaga a planilha, só o cadastro.')) return;
+    try{
+      await callApi('removerDemanda', {login:session.login, senha:session.senha, id:editingDemandaId});
+      toast('Demanda removida');
+      goBack();
+      await loadAdminDemandas();
+    }catch(err){ toast(err.message); }
+  });
+
+  // ---------------- admin: usuários ----------------
+  async function loadAdminUsuarios(){
+    try{
+      const data = await callApi('listarUsuarios', {login:session.login, senha:session.senha});
+      usuarios = data.usuarios;
+      renderAdminUsuarios();
+    }catch(err){ toast(err.message); }
+  }
+  function renderAdminUsuarios(){
+    const wrap = $('adminUsuariosTab'); wrap.innerHTML='';
+    if(!usuarios.length){ wrap.innerHTML = emptyHtml('Nenhum usuário cadastrado ainda.'); return; }
+    usuarios.forEach(u=>{
+      const el = document.createElement('div');
+      el.className='list-row';
+      el.innerHTML = `
+        <div class="main">
+          <p class="t1">${u.nome}</p>
+          <p class="t2">${u.login}</p>
+        </div>
+        <span class="status-chip ${u.papel==='admin'?'em_andamento':'pending'}">${u.papel==='admin'?'Admin':'Técnico'}</span>`;
+      el.addEventListener('click', ()=> abrirFormUsuario(u));
+      wrap.appendChild(el);
+    });
+  }
+
+  function abrirFormUsuario(u){
+    editingUsuarioLoginOriginal = u ? u.login : null;
+    $('usuarioFormTag').textContent = u ? 'EDITAR USUÁRIO' : 'NOVO USUÁRIO';
+    $('usuarioFormTitle').textContent = u ? 'Editar usuário' : 'Cadastrar usuário';
+    $('usuarioNomeInput').value = u ? u.nome : '';
+    $('usuarioLoginInput').value = u ? u.login : '';
+    $('usuarioSenhaInput').value = '';
+    $('usuarioPapelSelect').value = u ? u.papel : 'tecnico';
+    $('senhaOpcionalTag').style.display = u ? 'inline' : 'none';
+    $('removerUsuarioWrap').style.display = u ? 'block' : 'none';
+    goTo('admin-usuario-form');
+  }
+
+  $('salvarUsuarioBtn').addEventListener('click', async ()=>{
+    const nome = $('usuarioNomeInput').value.trim();
+    const novoLogin = $('usuarioLoginInput').value.trim();
+    const novaSenha = $('usuarioSenhaInput').value;
+    const papel = $('usuarioPapelSelect').value;
+    if(!nome || !novoLogin){ toast('Preencha nome e login'); return; }
+    if(!editingUsuarioLoginOriginal && !novaSenha){ toast('Defina uma senha para o novo usuário'); return; }
+    try{
+      await callApi('salvarUsuario', {
+        login:session.login, senha:session.senha,
+        loginOriginal: editingUsuarioLoginOriginal || '',
+        novoLogin, novaSenha, nome, papel
+      });
+      toast('Usuário salvo');
+      goBack();
+      await loadAdminUsuarios();
+      renderAdminDemandas();
+    }catch(err){ toast(err.message); }
+  });
+
+  $('removerUsuarioBtn').addEventListener('click', async ()=>{
+    if(!editingUsuarioLoginOriginal) return;
+    if(!confirm('Remover este usuário?')) return;
+    try{
+      await callApi('removerUsuario', {login:session.login, senha:session.senha, login2:editingUsuarioLoginOriginal});
+      toast('Usuário removido');
+      goBack();
+      await loadAdminUsuarios();
+    }catch(err){ toast(err.message); }
+  });
+
+  // ---------------- inicialização ----------------
+  if(session){
+    afterLogin();
+  } else {
+    showScreen('login');
   }
 
 })();
