@@ -227,6 +227,11 @@
       </div>
       <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
 
+      <div class="scan-field" style="margin-bottom:14px;">
+        <input type="text" id="searchInput" class="mono" placeholder="Buscar XID, transmissor/sonda antigos ou nome">
+        <div class="scan-btn" data-target="searchInput" data-label="Buscar ponto">▤</div>
+      </div>
+
       <div class="filter-row">
         <div class="filter-chip active" data-filter="all">Todos</div>
         <div class="filter-chip" data-filter="pending">Pendentes</div>
@@ -298,7 +303,8 @@
     <button class="btn btn-primary" id="savePointBtn">Salvar ponto e voltar</button>
   </div>
   <div class="footer-fixed" id="footer-summary" style="display:none;">
-    <button class="btn btn-primary" id="syncBtn">Sincronizar com a planilha</button>
+    <button class="btn btn-primary" id="syncBtn" style="margin-bottom:9px;">Sincronizar com a planilha</button>
+    <button class="btn btn-ok" id="finishBtn">Concluir demanda</button>
   </div>
 
   <div class="toast" id="toast"></div>
@@ -333,6 +339,7 @@
   let camMode = null; // 'code' | 'photo'
   let camTargetInputId = null;
   let listFilter = 'all';
+  let searchQuery = '';
   let barcodeDetector = null;
   if ('BarcodeDetector' in window) {
     try { barcodeDetector = new BarcodeDetector({formats:['qr_code','ean_13','ean_8','code_128','code_39','upc_a']}); } catch(e){}
@@ -413,6 +420,7 @@
       transmissorAntigo:p.transmissorAntigo, sondaAntiga:p.sondaAntiga,
       transNovo:'', sondaNova:'', noSonda:false, photo:null, status:'pending'
     }));
+    searchQuery=''; $('searchInput').value='';
     persist();
     enterVisit();
   });
@@ -434,8 +442,19 @@
 
     const wrap = $('pointList'); wrap.innerHTML='';
     let list = points;
-    if(listFilter==='pending') list = points.filter(p=>p.status==='pending');
-    if(listFilter==='done') list = points.filter(p=>p.status==='done');
+    if(listFilter==='pending') list = list.filter(p=>p.status==='pending');
+    if(listFilter==='done') list = list.filter(p=>p.status==='done');
+    if(searchQuery){
+      const q = searchQuery;
+      list = list.filter(p=>
+        p.xid.toLowerCase().includes(q) ||
+        p.nome.toLowerCase().includes(q) ||
+        (p.transmissorAntigo||'').toLowerCase().includes(q) ||
+        (p.sondaAntiga||'').toLowerCase().includes(q) ||
+        (p.transNovo||'').toLowerCase().includes(q) ||
+        (p.sondaNova||'').toLowerCase().includes(q)
+      );
+    }
 
     if(list.length===0){
       wrap.innerHTML = '<div class="empty"><div class="icon">📋</div>Nenhum ponto nesse filtro.</div>';
@@ -462,6 +481,11 @@
       listFilter = chip.dataset.filter;
       renderList();
     });
+  });
+
+  $('searchInput').addEventListener('input', e=>{
+    searchQuery = e.target.value.trim().toLowerCase();
+    renderList();
   });
 
   $('backBtn').addEventListener('click', ()=>{
@@ -591,9 +615,30 @@
   }
 
   function onCodeDetected(value){
-    if(camTargetInputId) $(camTargetInputId).value = value;
-    toast('Código lido: '+value);
+    const target = camTargetInputId;
+    if(target){
+      const el = $(target);
+      el.value = value;
+      el.dispatchEvent(new Event('input', {bubbles:true}));
+    }
+    if(target === 'searchInput'){
+      toast('Buscando: '+value);
+      tryJumpToPoint(value);
+    } else {
+      toast('Código lido: '+value);
+    }
     closeCam();
+  }
+
+  function tryJumpToPoint(code){
+    const q = code.trim().toLowerCase();
+    const matches = points.filter(p=>
+      p.xid.toLowerCase()===q ||
+      (p.transmissorAntigo||'').toLowerCase()===q ||
+      (p.sondaAntiga||'').toLowerCase()===q
+    );
+    if(matches.length===1){ openCapture(matches[0].id); }
+    else if(matches.length===0){ toast('Nenhum ponto encontrado para esse código — lista filtrada por texto parcial'); }
   }
 
   function capturePhoto(){
@@ -640,10 +685,9 @@
     const payload = {
       sheetId: currentSheetId,
       aba: 'Relação de Pontos',
-      registros: done.map(p=>({
-        xid:p.xid,
-        transmissor_novo:p.transNovo,
-        sonda_nova: p.noSonda ? '' : p.sondaNova
+      concluir: false,
+      registros: buildRegistros().map(r=> Object.assign({}, r, {
+        foto_base64: r.foto_base64 ? '[imagem base64 omitida na prévia]' : null
       }))
     };
     $('payloadBox').textContent = JSON.stringify(payload, null, 2);
@@ -655,33 +699,30 @@
       ? 'Ocultar dados que seriam enviados ▴' : 'Ver dados que seriam enviados para o Sheets ▾';
   });
 
-  $('syncBtn').addEventListener('click', ()=>{
-    const btn = $('syncBtn');
-    const done = points.filter(p=>p.status==='done');
-    if(done.length===0){ toast('Nenhum ponto para sincronizar'); return; }
-
-    const registros = done.map(p=>({
+  function buildRegistros(){
+    return points.filter(p=>p.status==='done').map(p=>({
       xid:p.xid,
       transmissor_novo:p.transNovo,
-      sonda_nova: p.noSonda ? '' : p.sondaNova
+      sonda_nova: p.noSonda ? '' : p.sondaNova,
+      foto_base64: p.photo || null
     }));
+  }
 
-    btn.disabled = true; btn.textContent='Enviando para a planilha…';
-
+  function runSync(btn, finalize){
+    const registros = buildRegistros();
+    if(registros.length===0 && !finalize){ toast('Nenhum ponto para sincronizar'); return; }
     if(!scriptUrl){
-      // modo demonstração — nenhuma URL de Apps Script configurada
-      setTimeout(()=>{
-        btn.textContent='✓ Simulado (sem Apps Script configurado)';
-        toast('Modo demonstração — configure a URL do Apps Script na tela inicial para gravar de verdade');
-        setTimeout(()=>{ btn.disabled=false; btn.textContent='Sincronizar com a planilha'; },2200);
-      }, 1200);
+      toast('Configure a URL do Apps Script na tela inicial antes de sincronizar');
       return;
     }
+
+    const original = btn.textContent;
+    btn.disabled = true; btn.textContent = finalize ? 'Concluindo…' : 'Enviando para a planilha…';
 
     fetch(scriptUrl, {
       method:'POST',
       headers:{'Content-Type':'text/plain;charset=utf-8'}, // evita preflight CORS
-      body: JSON.stringify({ sheetId: currentSheetId, aba:'Relação de Pontos', registros })
+      body: JSON.stringify({ sheetId: currentSheetId, aba:'Relação de Pontos', concluir: !!finalize, registros })
     })
       .then(r=> r.text().then(text=>({ok:r.ok, status:r.status, text})))
       .then(({ok, status, text})=>{
@@ -694,18 +735,35 @@
           throw new Error(data.error || ('Erro HTTP '+status));
         }
         const naoEncontrados = (data.results||[]).filter(r=>r.status==='nao_encontrado');
-        btn.textContent = '✓ Sincronizado com sucesso';
-        toast(naoEncontrados.length
-          ? (registros.length-naoEncontrados.length)+' gravado(s), '+naoEncontrados.length+' XID não encontrado na planilha'
-          : registros.length+' registro(s) gravados na planilha');
-        persist();
-        setTimeout(()=>{ btn.disabled=false; btn.textContent='Sincronizar com a planilha'; },2200);
+        const semFoto = (data.results||[]).filter(r=> r.foto && r.foto.indexOf('erro')===0);
+
+        if(finalize){
+          clearPersisted();
+          points = [];
+          toast('Demanda concluída e sincronizada com a planilha');
+          setTimeout(()=>{ showScreen('link'); }, 900);
+        } else {
+          persist();
+          toast(naoEncontrados.length
+            ? (registros.length-naoEncontrados.length)+' gravado(s), '+naoEncontrados.length+' XID não encontrado na planilha'
+            : registros.length+' registro(s) gravados na planilha'+(semFoto.length?' (falha ao colar '+semFoto.length+' foto(s))':''));
+          btn.textContent = '✓ Sincronizado com sucesso';
+          setTimeout(()=>{ btn.disabled=false; btn.textContent=original; },2200);
+        }
       })
       .catch(err=>{
-        btn.textContent='Falha na sincronização';
+        btn.textContent = 'Falha';
         toast(err.message || 'Não foi possível conectar ao Apps Script');
-        setTimeout(()=>{ btn.disabled=false; btn.textContent='Sincronizar com a planilha'; },3200);
+        setTimeout(()=>{ btn.disabled=false; btn.textContent=original; },3200);
       });
+  }
+
+  $('syncBtn').addEventListener('click', ()=> runSync($('syncBtn'), false));
+  $('finishBtn').addEventListener('click', ()=>{
+    const done = points.filter(p=>p.status==='done').length;
+    const pendentes = points.length - done;
+    if(pendentes>0 && !confirm(pendentes+' ponto(s) ainda pendente(s). Concluir a demanda mesmo assim?')) return;
+    runSync($('finishBtn'), true);
   });
 
   function checkCameraSupport(){
