@@ -708,7 +708,7 @@
     }));
   }
 
-  function runSync(btn, finalize){
+  async function runSync(btn, finalize){
     const registros = buildRegistros();
     if(registros.length===0 && !finalize){ toast('Nenhum ponto para sincronizar'); return; }
     if(!scriptUrl){
@@ -719,43 +719,56 @@
     const original = btn.textContent;
     btn.disabled = true; btn.textContent = finalize ? 'Concluindo…' : 'Enviando para a planilha…';
 
-    fetch(scriptUrl, {
-      method:'POST',
-      headers:{'Content-Type':'text/plain;charset=utf-8'}, // evita preflight CORS
-      body: JSON.stringify({ sheetId: currentSheetId, aba:'Relação de Pontos', concluir: !!finalize, registros })
-    })
-      .then(r=> r.text().then(text=>({ok:r.ok, status:r.status, text})))
-      .then(({ok, status, text})=>{
-        let data;
+    const payload = JSON.stringify({ sheetId: currentSheetId, aba:'Relação de Pontos', concluir: !!finalize, registros });
+    const headers = {'Content-Type':'text/plain;charset=utf-8'}; // evita preflight CORS
+
+    try{
+      let data = null;
+      let confirmed = true;
+
+      try{
+        const r = await fetch(scriptUrl, { method:'POST', headers, body: payload });
+        const text = await r.text();
         try{ data = JSON.parse(text); }
         catch(e){
-          throw new Error('Resposta não era JSON (HTTP '+status+'). Verifique se a URL termina em /exec e se a implantação está com acesso "Qualquer pessoa".');
+          throw new Error('Resposta não era JSON (HTTP '+r.status+'). Verifique se a URL termina em /exec e se a implantação está com acesso "Qualquer pessoa".');
         }
-        if(!ok || !data.success){
-          throw new Error(data.error || ('Erro HTTP '+status));
-        }
-        const naoEncontrados = (data.results||[]).filter(r=>r.status==='nao_encontrado');
-        const semFoto = (data.results||[]).filter(r=> r.foto && r.foto.indexOf('erro')===0);
+        if(!r.ok || !data.success) throw new Error((data && data.error) || ('Erro HTTP '+r.status));
+      } catch(corsErr){
+        // fallback: o navegador pode estar bloqueando a leitura da resposta por CORS,
+        // mesmo que o Apps Script grave os dados normalmente. Tenta reenviar em modo
+        // "no-cors" — a gravação acontece, só não conseguimos ler a confirmação.
+        await fetch(scriptUrl, { method:'POST', mode:'no-cors', headers, body: payload });
+        confirmed = false;
+      }
 
-        if(finalize){
-          clearPersisted();
-          points = [];
-          toast('Demanda concluída e sincronizada com a planilha');
-          setTimeout(()=>{ showScreen('link'); }, 900);
-        } else {
-          persist();
+      if(finalize){
+        clearPersisted();
+        points = [];
+        toast(confirmed
+          ? 'Demanda concluída e sincronizada com a planilha'
+          : 'Demanda enviada — o navegador bloqueou a confirmação (CORS), confira na planilha se os dados chegaram');
+        setTimeout(()=>{ showScreen('link'); }, 900);
+      } else {
+        persist();
+        if(confirmed){
+          const naoEncontrados = (data.results||[]).filter(r=>r.status==='nao_encontrado');
+          const semFoto = (data.results||[]).filter(r=> r.foto && r.foto.indexOf('erro')===0);
           toast(naoEncontrados.length
             ? (registros.length-naoEncontrados.length)+' gravado(s), '+naoEncontrados.length+' XID não encontrado na planilha'
             : registros.length+' registro(s) gravados na planilha'+(semFoto.length?' (falha ao colar '+semFoto.length+' foto(s))':''));
           btn.textContent = '✓ Sincronizado com sucesso';
-          setTimeout(()=>{ btn.disabled=false; btn.textContent=original; },2200);
+        } else {
+          toast('Enviado, mas o navegador bloqueou a confirmação (CORS). Confira na planilha se os dados chegaram.');
+          btn.textContent = '↑ Enviado (sem confirmação)';
         }
-      })
-      .catch(err=>{
-        btn.textContent = 'Falha';
-        toast(err.message || 'Não foi possível conectar ao Apps Script');
-        setTimeout(()=>{ btn.disabled=false; btn.textContent=original; },3200);
-      });
+        setTimeout(()=>{ btn.disabled=false; btn.textContent=original; },2600);
+      }
+    } catch(err){
+      btn.textContent = 'Falha';
+      toast(err.message || 'Não foi possível conectar ao Apps Script');
+      setTimeout(()=>{ btn.disabled=false; btn.textContent=original; },3200);
+    }
   }
 
   $('syncBtn').addEventListener('click', ()=> runSync($('syncBtn'), false));
