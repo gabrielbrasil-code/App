@@ -18,21 +18,25 @@
     font-family:'Ubuntu',system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased;}
   .mono{font-variant-numeric:tabular-nums;letter-spacing:.01em;}
   #app{max-width:480px;margin:0 auto;min-height:100vh;position:relative;
-    display:flex;flex-direction:column;background:var(--bg);}
+    display:flex;flex-direction:column;background:var(--bg);transition:max-width .15s;}
+  #app.admin-mode{max-width:1180px;}
 
   .topbar{position:sticky;top:0;z-index:20;background:var(--surface);border-bottom:1px solid var(--line);
     padding:12px 16px;display:flex;align-items:center;gap:10px;}
+  #app.admin-mode .topbar{padding:16px 32px;}
   .topbar .back{width:32px;height:32px;border-radius:8px;background:var(--surface-alt);
     border:1px solid var(--line);display:flex;align-items:center;justify-content:center;
     color:var(--accent);cursor:pointer;flex-shrink:0;font-size:16px;}
   .topbar .titles{min-width:0;flex:1;}
   .topbar h1{font-size:13.5px;font-weight:700;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  #app.admin-mode .topbar h1{font-size:16px;}
   .topbar p{font-size:11.5px;color:var(--text-muted);margin:2px 0 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .badge{font-size:11px;padding:3px 9px;border-radius:20px;font-weight:700;
     background:var(--accent-soft);color:var(--accent-dark);flex-shrink:0;}
   .logout-link{font-size:12px;color:var(--text-muted);flex-shrink:0;cursor:pointer;}
 
   main{flex:1;padding:16px;padding-bottom:96px;}
+  #app.admin-mode main{padding:28px 32px 60px;}
   .screen{display:none;}
   .screen.active{display:block;animation:fade .25s ease;}
   @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
@@ -58,9 +62,7 @@
   .btn-primary:disabled{background:var(--line);color:var(--text-muted);}
   .btn-ghost{background:var(--surface);color:var(--text);border:1px solid var(--line);}
   .btn-ok{background:var(--accent);color:#fff;}
-  .btn-warn{background:var(--warn);color:#1b1b1b;}
-  .btn-sm{padding:9px 12px;font-size:12.5px;}
-  .btn-text{background:transparent;color:var(--accent);font-weight:600;padding:6px;width:auto;}
+  .btn-sm{padding:9px 12px;font-size:12.5px;width:auto;}
 
   .info-line{display:flex;justify-content:space-between;gap:12px;padding:9px 0;
     border-bottom:1px solid var(--line);font-size:13px;}
@@ -72,6 +74,7 @@
   .progress-row .count{font-size:12.5px;color:var(--text-muted);}
   .progress-track{height:5px;background:var(--surface-alt);border-radius:4px;overflow:hidden;margin-bottom:18px;}
   .progress-fill{height:100%;background:var(--accent);border-radius:4px;transition:width .3s;}
+  .progress-track.mini{height:6px;width:90px;margin:0;display:inline-block;vertical-align:middle;}
 
   .filter-row{display:flex;gap:8px;margin-bottom:16px;overflow-x:auto;padding-bottom:2px;}
   .filter-chip{flex-shrink:0;padding:6px 13px;border-radius:20px;font-size:12.5px;font-weight:600;
@@ -93,6 +96,9 @@
   .status-chip.pending{background:var(--surface-alt);color:var(--text-muted);}
   .status-chip.done{background:var(--accent-soft);color:var(--accent-dark);}
   .status-chip.em_andamento{background:#FFF1E0;color:#B25E00;}
+  .sync-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-left:6px;vertical-align:middle;}
+  .sync-dot.synced{background:var(--accent);}
+  .sync-dot.pending-sync{background:var(--warn);}
 
   .footer-fixed{position:sticky;bottom:0;left:0;right:0;padding:14px 16px;
     background:linear-gradient(to top,var(--bg) 65%,transparent);max-width:480px;margin:0 auto;}
@@ -157,36 +163,74 @@
   .empty{text-align:center;padding:44px 20px;color:var(--text-muted);}
   .empty .icon{font-size:30px;margin-bottom:10px;}
 
-  /* login */
-  .login-hero{background:linear-gradient(135deg,var(--accent),#02807D);color:#fff;
-    padding:52px 24px 40px;text-align:center;position:relative;overflow:hidden;}
-  .login-hero::after{content:'';position:absolute;inset:0;opacity:.15;
-    background-image:radial-gradient(circle at 20% 20%, transparent 0, transparent 40%),
-      repeating-linear-gradient(120deg, rgba(255,255,255,.5) 0 1px, transparent 1px 46px),
-      repeating-linear-gradient(60deg, rgba(255,255,255,.5) 0 1px, transparent 1px 46px);
-    pointer-events:none;}
-  .login-hero .mark{width:44px;height:62px;margin:0 auto 14px;color:#fff;position:relative;z-index:1;}
-  .login-hero .wordmark{font-size:26px;font-weight:700;margin:0;position:relative;z-index:1;}
-  .login-hero .claim{font-size:12.5px;opacity:.85;margin:6px 0 0;position:relative;z-index:1;}
-  .login-form{padding:26px 24px;}
-  details.server-config{margin-top:22px;font-size:12.5px;color:var(--text-muted);}
-  details.server-config summary{cursor:pointer;font-weight:600;color:var(--accent);}
-  details.server-config .inner{margin-top:10px;}
+  /* ---------------- LOGIN (modelo enviado) ---------------- */
+  #screen-login{
+    position:fixed;inset:0;z-index:50;display:none;flex-direction:column;align-items:center;
+    justify-content:flex-start;padding:0;overflow-y:auto;
+    background:linear-gradient(160deg,#02B3AF 0%,var(--accent) 45%,#017875 100%);
+  }
+  #screen-login.active{display:flex;}
+  #screen-login::before{
+    content:'';position:absolute;inset:0;opacity:.35;pointer-events:none;
+    background-image:
+      repeating-radial-gradient(circle at 15% 10%, rgba(255,255,255,.25) 0 1px, transparent 1px 90px),
+      repeating-linear-gradient(115deg, rgba(255,255,255,.12) 0 1px, transparent 1px 60px),
+      repeating-linear-gradient(35deg, rgba(255,255,255,.10) 0 1px, transparent 1px 70px);
+  }
+  .login-wrap{position:relative;z-index:1;width:100%;max-width:360px;padding:56px 28px 40px;margin:0 auto;}
+  .login-wrap .mark{width:40px;height:56px;margin:0 auto 14px;color:#fff;display:block;}
+  .login-wrap .wordmark{font-size:27px;font-weight:700;margin:0 0 40px;color:#fff;text-align:center;}
+  .login-field{
+    width:100%;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.35);
+    color:#fff;padding:15px 20px;border-radius:30px;font-size:14.5px;font-family:'Ubuntu',sans-serif;
+    outline:none;margin-bottom:14px;
+  }
+  .login-field::placeholder{color:rgba(255,255,255,.8);}
+  .login-field:focus{background:rgba(255,255,255,.26);border-color:#fff;}
+  .login-forgot{display:block;text-align:center;font-size:12.5px;color:rgba(255,255,255,.9);
+    margin:6px 0 26px;cursor:pointer;text-decoration:underline;}
+  .login-enter-btn{
+    width:100%;padding:15px;border-radius:30px;border:none;background:#fff;color:var(--accent-dark);
+    font-weight:700;font-size:14px;letter-spacing:.04em;text-transform:uppercase;cursor:pointer;
+  }
+  .login-enter-btn:disabled{opacity:.6;}
+  .login-error{color:#FFE1E1;background:rgba(214,69,69,.35);border:1px solid rgba(255,255,255,.3);
+    border-radius:10px;padding:10px 14px;font-size:12.5px;margin-top:14px;text-align:center;display:none;}
 
-  /* admin */
-  .tabbar{display:flex;gap:8px;margin-bottom:16px;}
-  .tabbar .tab{flex:1;text-align:center;padding:10px;border-radius:10px;font-size:13px;font-weight:700;
-    background:var(--surface);border:1px solid var(--line);color:var(--text-muted);cursor:pointer;}
-  .tabbar .tab.active{background:var(--accent);color:#fff;border-color:var(--accent);}
-  .list-row{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:13px 14px;
-    margin-bottom:9px;display:flex;align-items:center;gap:10px;cursor:pointer;}
-  .list-row .main{flex:1;min-width:0;}
-  .list-row .main .t1{font-size:13.5px;font-weight:700;margin:0 0 2px;}
-  .list-row .main .t2{font-size:12px;color:var(--text-muted);margin:0;}
+  /* ---------------- ADMIN (painel desktop) ---------------- */
+  .admin-topnav{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+  .admin-tabnav{display:flex;gap:6px;margin-bottom:22px;border-bottom:1px solid var(--line);}
+  .admin-tabnav .tab{padding:11px 18px;font-size:13.5px;font-weight:700;color:var(--text-muted);
+    cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;}
+  .admin-tabnav .tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+
+  .stat-cards{display:flex;gap:14px;margin-bottom:24px;flex-wrap:wrap;}
+  .stat-card{flex:1;min-width:150px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px 18px;}
+  .stat-card .num{font-size:26px;font-weight:700;color:var(--accent);line-height:1;}
+  .stat-card .label{font-size:12px;color:var(--text-muted);margin-top:6px;}
+
+  .admin-toolbar{display:flex;justify-content:flex-end;margin-bottom:14px;}
+  .btn-new{width:auto;padding:11px 20px;border-radius:9px;}
+
+  table.admin-table{width:100%;border-collapse:collapse;background:var(--surface);border:1px solid var(--line);
+    border-radius:12px;overflow:hidden;font-size:13.5px;}
+  table.admin-table thead th{text-align:left;font-size:11.5px;color:var(--text-muted);text-transform:uppercase;
+    letter-spacing:.03em;padding:12px 16px;border-bottom:1px solid var(--line);background:var(--surface-alt);}
+  table.admin-table tbody td{padding:13px 16px;border-bottom:1px solid var(--line);vertical-align:middle;}
+  table.admin-table tbody tr:last-child td{border-bottom:none;}
+  table.admin-table tbody tr:hover{background:var(--surface-alt);cursor:pointer;}
+  table.admin-table .cell-muted{color:var(--text-muted);font-size:12px;}
+  table.admin-table a.table-link{color:var(--accent);font-weight:600;text-decoration:none;font-size:12.5px;}
+  table.admin-table a.table-link:hover{text-decoration:underline;}
+
+  .form-card{max-width:460px;background:var(--surface);border:1px solid var(--line);border-radius:14px;
+    padding:24px 26px;}
+
   .fab{position:fixed;bottom:96px;right:calc(50% - 240px + 18px);width:52px;height:52px;border-radius:50%;
     background:var(--accent);color:#fff;font-size:26px;display:flex;align-items:center;justify-content:center;
     box-shadow:0 6px 18px rgba(1,161,158,.4);border:none;cursor:pointer;z-index:15;}
   @media (max-width:520px){ .fab{ right:20px; } }
+  #app.admin-mode .fab{display:none !important;} /* substituído pelo botão "Novo" na toolbar */
 </style>
 </head>
 <body>
@@ -207,7 +251,7 @@
 
     <!-- ===================== LOGIN ===================== -->
     <section class="screen active" id="screen-login">
-      <div class="login-hero">
+      <div class="login-wrap">
         <svg class="mark" viewBox="0 0 40 56" xmlns="http://www.w3.org/2000/svg" fill="none">
           <line x1="20" y1="2" x2="20" y2="12" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
           <rect x="6" y="12" width="28" height="40" rx="12" stroke="currentColor" stroke-width="3"/>
@@ -216,30 +260,12 @@
           <path d="M14 38 Q20 44 26 38" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
         </svg>
         <p class="wordmark">sensorweb</p>
-        <p class="claim">conectando ambientes, dispositivos e pessoas</p>
-      </div>
 
-      <div class="login-form">
-        <label for="loginInput">Usuário</label>
-        <input type="text" id="loginInput" placeholder="seu.login" autocapitalize="none">
+        <input type="text" id="loginInput" class="login-field" placeholder="Login" autocapitalize="none">
+        <input type="password" id="senhaInput" class="login-field" placeholder="Senha">
 
-        <label for="senhaInput">Senha</label>
-        <input type="password" id="senhaInput" placeholder="••••••••">
-
-        <div style="margin-top:22px;">
-          <button class="btn btn-primary" id="loginBtn">Entrar</button>
-        </div>
-        <div class="hint" id="loginError" style="color:var(--danger);display:none;"></div>
-
-        <details class="server-config">
-          <summary>Configuração do servidor</summary>
-          <div class="inner">
-            <label style="margin-top:8px;">URL do Apps Script central</label>
-            <input type="text" id="serverUrlInput" placeholder="https://script.google.com/macros/s/.../exec">
-            <div class="hint">Configurado uma única vez por dispositivo. Peça essa URL ao administrador.</div>
-            <div style="margin-top:12px;"><button class="btn btn-ghost btn-sm" id="saveServerBtn">Salvar</button></div>
-          </div>
-        </details>
+        <button class="login-enter-btn" id="loginBtn" style="margin-top:12px;">Entrar</button>
+        <div class="login-error" id="loginError"></div>
       </div>
     </section>
 
@@ -287,7 +313,7 @@
       </div>
 
       <div class="field-card">
-        <h3>Transmissor novo</h3>
+        <h3>Transmissor novo <span id="syncIndicatorTrans"></span></h3>
         <div class="scan-field">
           <input type="text" id="transNovoInput" class="mono" placeholder="Escaneie ou digite o código">
           <div class="scan-btn" data-target="transNovoInput" data-label="Transmissor novo">▤</div>
@@ -311,6 +337,8 @@
         <button class="btn btn-ghost btn-sm" id="takePhotoBtn">Tirar foto</button>
       </div>
 
+      <div class="hint" id="autoSyncHint">As alterações deste ponto são enviadas automaticamente para a planilha.</div>
+
       <canvas id="canvasEl"></canvas>
     </section>
 
@@ -319,7 +347,7 @@
       <div class="hero" style="padding-top:4px;">
         <div class="tag">RESUMO DA VISITA</div>
         <h2 id="summaryTitle" style="font-size:19px;">Pronto para sincronizar</h2>
-        <p id="summarySub">Confira os pontos coletados antes de enviar para a planilha.</p>
+        <p id="summarySub">Os pontos concluídos já foram enviados automaticamente. Use "Sincronizar" só se algum não confirmar.</p>
       </div>
       <div id="summaryList"></div>
 
@@ -327,13 +355,13 @@
       <div class="payload" id="payloadBox"></div>
     </section>
 
-    <!-- ===================== ADMIN: HOME ===================== -->
+    <!-- ===================== ADMIN: HOME (desktop) ===================== -->
     <section class="screen" id="screen-admin-home">
       <div class="hero" style="padding-top:6px;">
         <div class="tag">PAINEL ADMINISTRATIVO</div>
-        <h2 style="font-size:20px;">Demandas e usuários</h2>
+        <h2 style="font-size:22px;">Demandas e usuários</h2>
       </div>
-      <div class="tabbar">
+      <div class="admin-tabnav">
         <div class="tab active" data-admin-tab="demandas">Demandas</div>
         <div class="tab" data-admin-tab="usuarios">Usuários</div>
       </div>
@@ -348,21 +376,22 @@
         <div class="tag" id="demandaFormTag">NOVA DEMANDA</div>
         <h2 style="font-size:20px;" id="demandaFormTitle">Cadastrar demanda</h2>
       </div>
+      <div class="form-card">
+        <label>Nome / Unidade</label>
+        <input type="text" id="demandaNomeInput" placeholder="Ex: ICESP - Itaci">
 
-      <label>Nome / Unidade</label>
-      <input type="text" id="demandaNomeInput" placeholder="Ex: ICESP - Itaci">
+        <label>Link da planilha de pontos (Google Sheets)</label>
+        <input type="text" id="demandaLinkInput" class="mono" placeholder="https://docs.google.com/spreadsheets/d/...">
 
-      <label>Link da planilha de pontos (Google Sheets)</label>
-      <input type="text" id="demandaLinkInput" class="mono" placeholder="https://docs.google.com/spreadsheets/d/...">
+        <label>Técnico responsável</label>
+        <select id="demandaTecnicoSelect"></select>
 
-      <label>Técnico responsável</label>
-      <select id="demandaTecnicoSelect"></select>
-
-      <div style="margin-top:24px;">
-        <button class="btn btn-primary" id="salvarDemandaBtn">Salvar demanda</button>
-      </div>
-      <div style="margin-top:10px;" id="removerDemandaWrap">
-        <button class="btn btn-ghost btn-sm" id="removerDemandaBtn" style="color:var(--danger);">Remover demanda</button>
+        <div style="margin-top:24px;">
+          <button class="btn btn-primary" id="salvarDemandaBtn">Salvar demanda</button>
+        </div>
+        <div style="margin-top:10px;" id="removerDemandaWrap">
+          <button class="btn btn-ghost btn-sm" id="removerDemandaBtn" style="color:var(--danger);width:100%;">Remover demanda</button>
+        </div>
       </div>
     </section>
 
@@ -372,27 +401,28 @@
         <div class="tag" id="usuarioFormTag">NOVO USUÁRIO</div>
         <h2 style="font-size:20px;" id="usuarioFormTitle">Cadastrar usuário</h2>
       </div>
+      <div class="form-card">
+        <label>Nome</label>
+        <input type="text" id="usuarioNomeInput" placeholder="Nome completo">
 
-      <label>Nome</label>
-      <input type="text" id="usuarioNomeInput" placeholder="Nome completo">
+        <label>Login</label>
+        <input type="text" id="usuarioLoginInput" placeholder="usuario.login" autocapitalize="none">
 
-      <label>Login</label>
-      <input type="text" id="usuarioLoginInput" placeholder="usuario.login" autocapitalize="none">
+        <label>Senha <span id="senhaOpcionalTag" style="display:none;">(deixe em branco para manter a atual)</span></label>
+        <input type="password" id="usuarioSenhaInput" placeholder="••••••••">
 
-      <label>Senha <span id="senhaOpcionalTag" style="display:none;">(deixe em branco para manter a atual)</span></label>
-      <input type="password" id="usuarioSenhaInput" placeholder="••••••••">
+        <label>Papel</label>
+        <select id="usuarioPapelSelect">
+          <option value="tecnico">Técnico</option>
+          <option value="admin">Administrador</option>
+        </select>
 
-      <label>Papel</label>
-      <select id="usuarioPapelSelect">
-        <option value="tecnico">Técnico</option>
-        <option value="admin">Administrador</option>
-      </select>
-
-      <div style="margin-top:24px;">
-        <button class="btn btn-primary" id="salvarUsuarioBtn">Salvar usuário</button>
-      </div>
-      <div style="margin-top:10px;" id="removerUsuarioWrap">
-        <button class="btn btn-ghost btn-sm" id="removerUsuarioBtn" style="color:var(--danger);">Remover usuário</button>
+        <div style="margin-top:24px;">
+          <button class="btn btn-primary" id="salvarUsuarioBtn">Salvar usuário</button>
+        </div>
+        <div style="margin-top:10px;" id="removerUsuarioWrap">
+          <button class="btn btn-ghost btn-sm" id="removerUsuarioBtn" style="color:var(--danger);width:100%;">Remover usuário</button>
+        </div>
       </div>
     </section>
 
@@ -402,10 +432,10 @@
     <button class="btn btn-ok" id="goSummaryBtn">Ver resumo da visita</button>
   </div>
   <div class="footer-fixed" id="footer-capture" style="display:none;">
-    <button class="btn btn-primary" id="savePointBtn">Salvar ponto e voltar</button>
+    <button class="btn btn-primary" id="savePointBtn">Salvar ponto</button>
   </div>
   <div class="footer-fixed" id="footer-summary" style="display:none;">
-    <button class="btn btn-primary" id="syncBtn" style="margin-bottom:9px;">Sincronizar com a planilha</button>
+    <button class="btn btn-primary" id="syncBtn" style="margin-bottom:9px;">Sincronizar novamente</button>
     <button class="btn btn-ok" id="finishBtn">Concluir demanda</button>
   </div>
 
@@ -431,14 +461,18 @@
 (function(){
   const $ = id => document.getElementById(id);
 
+  // ---------------- CONFIGURAÇÃO FIXA DO SERVIDOR ----------------
+  // Cole aqui a URL do Apps Script central (Implantar > Nova implantação > /exec).
+  // É a mesma para todo mundo, então fica fixa no código, sem precisar digitar no app.
+  const CENTRAL_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyV1Gb_Pr0jkQRHvVS53wO4EnQReOg21YutRN-9oPmV2UPWfSJV5_flHPgplrfCfQ5WLA/exec';
+
   // ---------------- estado ----------------
-  let serverUrl = localStorage.getItem('sensorweb_server_url') || '';
   let session = null;
   try{ session = JSON.parse(localStorage.getItem('sensorweb_session') || 'null'); }catch(e){ session = null; }
 
-  let demandas = [];          // demandas do técnico logado
-  let demandasAdmin = [];     // cache admin
-  let usuarios = [];          // cache admin
+  let demandas = [];
+  let demandasAdmin = [];
+  let usuarios = [];
   let currentDemanda = null;
   let points = [];
   let currentPointId = null;
@@ -458,6 +492,7 @@
   if ('BarcodeDetector' in window) {
     try { barcodeDetector = new BarcodeDetector({formats:['qr_code','ean_13','ean_8','code_128','code_39','upc_a']}); } catch(e){}
   }
+  let debounceTimers = {};
 
   let screenStack = [];
   let currentScreenName = 'login';
@@ -466,6 +501,7 @@
   function emptyHtml(msg){ return '<div class="empty"><div class="icon">▦</div>'+msg+'</div>'; }
   function statusClass(s){ return s==='concluido' ? 'done' : (s==='em_andamento' ? 'em_andamento' : 'pending'); }
   function statusLabel(s){ return s==='concluido' ? 'Concluído' : (s==='em_andamento' ? 'Em andamento' : 'Pendente'); }
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
   function toast(msg){
     const t=$('toast'); t.textContent=msg; t.classList.add('show');
@@ -474,13 +510,15 @@
 
   // ---------------- API ----------------
   async function callApi(action, extra){
-    if(!serverUrl) throw new Error('Configure a URL do servidor na tela de login');
+    if(!CENTRAL_SCRIPT_URL || CENTRAL_SCRIPT_URL.indexOf('COLE_AQUI') === 0){
+      throw new Error('O app ainda não tem a URL do servidor configurada no código-fonte (CENTRAL_SCRIPT_URL).');
+    }
     const body = Object.assign({action}, extra||{});
     let r;
     try{
-      r = await fetch(serverUrl, { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify(body) });
+      r = await fetch(CENTRAL_SCRIPT_URL, { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify(body) });
     }catch(e){
-      throw new Error('Não foi possível conectar ao servidor. Verifique a URL e a conexão.');
+      throw new Error('Não foi possível conectar ao servidor. Verifique sua conexão.');
     }
     const text = await r.text();
     let data;
@@ -488,6 +526,22 @@
     catch(e){ throw new Error('Resposta inválida do servidor (HTTP '+r.status+').'); }
     if(!data.success) throw new Error(data.error || 'Erro desconhecido do servidor');
     return data;
+  }
+
+  // fetch "silenciosa" com fallback no-cors, usada pelo auto-sync (não precisa ler a resposta)
+  async function fireApi(action, extra){
+    const body = JSON.stringify(Object.assign({action}, extra||{}));
+    const headers = {'Content-Type':'text/plain;charset=utf-8'};
+    try{
+      const r = await fetch(CENTRAL_SCRIPT_URL, { method:'POST', headers, body });
+      const text = await r.text();
+      const data = JSON.parse(text);
+      if(!data.success) throw new Error(data.error||'erro');
+      return { confirmed:true, data };
+    }catch(e){
+      try{ await fetch(CENTRAL_SCRIPT_URL, { method:'POST', mode:'no-cors', headers, body }); return { confirmed:false }; }
+      catch(e2){ return { confirmed:false, failed:true }; }
+    }
   }
 
   // ---------------- navegação ----------------
@@ -499,7 +553,7 @@
     if(footers[name]) $(footers[name]).style.display='block';
     $('topbar').style.display = name==='login' ? 'none' : 'flex';
     $('backBtn').style.visibility = (name==='login' || screenStack.length===0) ? 'hidden' : 'visible';
-    $('fabAdmin').style.display = (session && session.papel==='admin' && name==='admin-home') ? 'flex' : 'none';
+    document.getElementById('app').classList.toggle('admin-mode', !!(session && session.papel==='admin' && name!=='login'));
     window.scrollTo(0,0);
   }
   function goTo(name){ screenStack.push(currentScreenName); currentScreenName = name; showScreen(name); }
@@ -516,20 +570,12 @@
   $('backBtn').addEventListener('click', goBack);
 
   // ---------------- login ----------------
-  $('serverUrlInput').value = serverUrl;
-  $('saveServerBtn').addEventListener('click', ()=>{
-    serverUrl = $('serverUrlInput').value.trim();
-    localStorage.setItem('sensorweb_server_url', serverUrl);
-    toast('URL do servidor salva neste dispositivo');
-  });
-
   function showLoginError(msg){ $('loginError').textContent = msg; $('loginError').style.display='block'; }
 
   $('loginBtn').addEventListener('click', async ()=>{
     const login = $('loginInput').value.trim();
     const senha = $('senhaInput').value;
     if(!login || !senha){ showLoginError('Preencha usuário e senha'); return; }
-    if(!serverUrl){ showLoginError('Configure a URL do servidor logo abaixo antes de entrar'); return; }
     const btn = $('loginBtn');
     btn.disabled = true; btn.textContent = 'Entrando…';
     try{
@@ -581,7 +627,7 @@
       el.className = 'list-row';
       el.innerHTML = `
         <div class="main">
-          <p class="t1">${d.nome}</p>
+          <p class="t1">${esc(d.nome)}</p>
           <p class="t2">${d.feitos||0} de ${d.total||0} pontos</p>
         </div>
         <span class="status-chip ${statusClass(d.status)}">${statusLabel(d.status)}</span>`;
@@ -599,7 +645,7 @@
         id:'p'+i, xid:p.xid, nome:p.nome,
         transmissorAntigo:p.transmissorAntigo, sondaAntiga:p.sondaAntiga,
         transNovo:p.transNovo||'', sondaNova:p.sondaNova||'', noSonda:false,
-        photo:null, status: p.transNovo ? 'done' : 'pending'
+        photo:null, status: p.transNovo ? 'done' : 'pending', synced: !!p.transNovo
       }));
       restoreDraft();
       $('topTitle').textContent = d.nome;
@@ -613,12 +659,11 @@
     }catch(err){ toast(err.message); }
   }
 
-  // rascunho local (sobrevive a fechar o app antes de sincronizar)
   function draftKey(){ return 'sw_draft_'+session.login+'_'+currentDemanda.sheetId; }
   function persistDraft(){
     try{
       const draft = {};
-      points.forEach(p=>{ draft[p.xid] = {transNovo:p.transNovo, sondaNova:p.sondaNova, noSonda:p.noSonda, photo:p.photo, status:p.status}; });
+      points.forEach(p=>{ draft[p.xid] = {transNovo:p.transNovo, sondaNova:p.sondaNova, noSonda:p.noSonda, photo:p.photo, status:p.status, synced:p.synced}; });
       localStorage.setItem(draftKey(), JSON.stringify(draft));
     }catch(e){}
   }
@@ -635,10 +680,45 @@
         if(d.noSonda) p.noSonda = true;
         if(d.photo) p.photo = d.photo;
         if(d.status==='done') p.status='done';
+        if(typeof d.synced==='boolean') p.synced = d.synced;
       });
     }catch(e){}
   }
   function clearDraft(){ try{ localStorage.removeItem(draftKey()); }catch(e){} }
+
+  // ---------------- envio automático (sem esperar clique em "Sincronizar") ----------------
+  function registroDe(p){
+    return { xid:p.xid, transmissor_novo:p.transNovo, sonda_nova: p.noSonda ? '' : p.sondaNova, foto_base64: p.photo || null };
+  }
+
+  async function autoSyncPoint(p, opts){
+    opts = opts || {};
+    if(!p.transNovo && !p.photo) return; // nada relevante ainda pra enviar
+    const result = await fireApi('sincronizarPontos', {
+      login:session.login, senha:session.senha, sheetId: currentDemanda.sheetId,
+      concluir:false, registros:[registroDe(p)]
+    });
+    p.synced = !!result.confirmed;
+    persistDraft();
+    updateSyncIndicator();
+    if(!opts.silent){
+      toast(result.confirmed ? 'Enviado para a planilha' : 'Salvo — será reenviado (sem confirmação de rede)');
+    }
+    if(currentScreenName==='list') renderList();
+  }
+
+  function scheduleAutoSync(p, delayMs){
+    clearTimeout(debounceTimers[p.id]);
+    debounceTimers[p.id] = setTimeout(()=> autoSyncPoint(p, {silent:true}), delayMs);
+  }
+
+  function updateSyncIndicator(){
+    const p = points.find(x=>x.id===currentPointId);
+    if(!p) return;
+    $('syncIndicatorTrans').innerHTML = p.transNovo
+      ? '<span class="sync-dot '+(p.synced?'synced':'pending-sync')+'"></span>'
+      : '';
+  }
 
   // ---------------- lista de pontos ----------------
   function renderList(){
@@ -664,12 +744,13 @@
     list.forEach(p=>{
       const el = document.createElement('div');
       el.className = 'point'+(p.status==='done'?' done':'');
+      const dot = p.status==='done' ? '<span class="sync-dot '+(p.synced?'synced':'pending-sync')+'"></span>' : '';
       el.innerHTML = `
         <div class="point-info">
-          <p class="xid">${p.xid}</p>
-          <p class="name">${p.nome}</p>
+          <p class="xid">${esc(p.xid)}</p>
+          <p class="name">${esc(p.nome)}</p>
         </div>
-        <span class="status-chip ${p.status}">${p.status==='done'?'Concluído':'Pendente'}</span>`;
+        <span class="status-chip ${p.status}">${p.status==='done'?'Concluído':'Pendente'}${dot}</span>`;
       el.addEventListener('click', ()=> openCapture(p.id));
       wrap.appendChild(el);
     });
@@ -704,6 +785,7 @@
     $('sondaNovaInput').disabled = p.noSonda;
 
     $('photoBox').innerHTML = p.photo ? `<img src="${p.photo}">` : `<div class="photo-placeholder">Nenhuma foto registrada</div>`;
+    updateSyncIndicator();
 
     goTo('capture');
   }
@@ -712,15 +794,15 @@
     $('sondaNovaInput').disabled = e.target.checked;
     if(e.target.checked) $('sondaNovaInput').value='';
     const p = points.find(x=>x.id===currentPointId);
-    if(p){ p.noSonda = e.target.checked; if(e.target.checked) p.sondaNova=''; persistDraft(); }
+    if(p){ p.noSonda = e.target.checked; if(e.target.checked) p.sondaNova=''; persistDraft(); scheduleAutoSync(p, 1200); }
   });
   $('transNovoInput').addEventListener('input', e=>{
     const p = points.find(x=>x.id===currentPointId);
-    if(p){ p.transNovo = e.target.value; persistDraft(); }
+    if(p){ p.transNovo = e.target.value; persistDraft(); updateSyncIndicator(); scheduleAutoSync(p, 1500); }
   });
   $('sondaNovaInput').addEventListener('input', e=>{
     const p = points.find(x=>x.id===currentPointId);
-    if(p){ p.sondaNova = e.target.value; persistDraft(); }
+    if(p){ p.sondaNova = e.target.value; persistDraft(); scheduleAutoSync(p, 1500); }
   });
 
   $('savePointBtn').addEventListener('click', ()=>{
@@ -732,7 +814,8 @@
     if(!noSonda && !sondaNova){ toast('Escaneie a sonda nova ou marque "não usa sonda separada"'); return; }
     p.transNovo = transNovo; p.sondaNova = noSonda ? '' : sondaNova; p.noSonda = noSonda; p.status = 'done';
     persistDraft();
-    toast('Ponto salvo');
+    clearTimeout(debounceTimers[p.id]);
+    autoSyncPoint(p, {silent:false});
     goBack();
   });
 
@@ -802,7 +885,15 @@
       el.dispatchEvent(new Event('input', {bubbles:true}));
     }
     if(target === 'searchInput'){ toast('Buscando: '+value); tryJumpToPoint(value); }
-    else toast('Código lido: '+value);
+    else{
+      toast('Código lido: '+value);
+      // escanear é uma ação discreta — envia já, sem esperar o debounce de digitação
+      const p = points.find(x=>x.id===currentPointId);
+      if(p && (target==='transNovoInput' || target==='sondaNovaInput')){
+        clearTimeout(debounceTimers[p.id]);
+        autoSyncPoint(p, {silent:true});
+      }
+    }
     closeCam();
   }
 
@@ -825,23 +916,17 @@
     p.photo = dataUrl;
     $('photoBox').innerHTML = `<img src="${dataUrl}">`;
     persistDraft();
-    toast('Foto capturada');
+    toast('Foto capturada — enviando…');
+    autoSyncPoint(p, {silent:true});
     closeCam();
   }
 
-  // ---------------- resumo / sincronização ----------------
-  function buildRegistros(){
-    return points.filter(p=>p.status==='done').map(p=>({
-      xid:p.xid, transmissor_novo:p.transNovo, sonda_nova: p.noSonda ? '' : p.sondaNova, foto_base64: p.photo || null
-    }));
-  }
+  // ---------------- resumo / sincronização manual (retry) ----------------
+  function buildRegistros(){ return points.filter(p=>p.status==='done').map(registroDe); }
 
   function renderSummary(){
     const done = points.filter(p=>p.status==='done');
     $('summaryTitle').textContent = done.length===points.length ? 'Todos os pontos concluídos' : (done.length+' de '+points.length+' pontos concluídos');
-    $('summarySub').textContent = done.length===points.length
-      ? 'Revise abaixo e sincronize para gravar na planilha da visita.'
-      : 'Você ainda pode sincronizar parcialmente e completar depois.';
 
     const wrap = $('summaryList'); wrap.innerHTML='';
     if(done.length===0){ wrap.innerHTML = emptyHtml('Nenhum ponto coletado ainda.'); }
@@ -849,11 +934,11 @@
       const el = document.createElement('div');
       el.className='summary-row';
       el.innerHTML = `
-        <div class="top"><span class="xid">${p.xid}</span></div>
-        <p class="name">${p.nome}</p>
+        <div class="top"><span class="xid">${esc(p.xid)}</span><span class="sync-dot ${p.synced?'synced':'pending-sync'}" title="${p.synced?'Sincronizado':'Aguardando confirmação'}"></span></div>
+        <p class="name">${esc(p.nome)}</p>
         <div class="kv-grid">
-          <span class="k">Transmissor novo</span><span class="v">${p.transNovo}</span>
-          <span class="k">Sonda nova</span><span class="v">${p.noSonda?'não se aplica':p.sondaNova}</span>
+          <span class="k">Transmissor novo</span><span class="v">${esc(p.transNovo)}</span>
+          <span class="k">Sonda nova</span><span class="v">${p.noSonda?'não se aplica':esc(p.sondaNova)}</span>
         </div>
         ${p.photo ? `<div class="thumb-strip"><img src="${p.photo}"></div>` : ''}`;
       wrap.appendChild(el);
@@ -876,7 +961,7 @@
     const registros = buildRegistros();
     if(registros.length===0 && !finalize){ toast('Nenhum ponto para sincronizar'); return; }
     const original = btn.textContent;
-    btn.disabled = true; btn.textContent = finalize ? 'Concluindo…' : 'Enviando para a planilha…';
+    btn.disabled = true; btn.textContent = finalize ? 'Concluindo…' : 'Enviando…';
 
     const payload = JSON.stringify({
       action:'sincronizarPontos', login:session.login, senha:session.senha,
@@ -887,15 +972,17 @@
     try{
       let data=null, confirmed=true;
       try{
-        const r = await fetch(serverUrl, { method:'POST', headers, body: payload });
+        const r = await fetch(CENTRAL_SCRIPT_URL, { method:'POST', headers, body: payload });
         const text = await r.text();
         try{ data = JSON.parse(text); }
         catch(e){ throw new Error('Resposta inválida (HTTP '+r.status+').'); }
         if(!data.success) throw new Error(data.error || 'Erro do servidor');
       }catch(corsErr){
-        await fetch(serverUrl, { method:'POST', mode:'no-cors', headers, body: payload });
+        await fetch(CENTRAL_SCRIPT_URL, { method:'POST', mode:'no-cors', headers, body: payload });
         confirmed = false;
       }
+
+      if(confirmed){ points.forEach(p=>{ if(p.status==='done') p.synced = true; }); persistDraft(); }
 
       if(finalize){
         clearDraft();
@@ -903,7 +990,6 @@
           : 'Demanda enviada — sem confirmação (CORS). Confira a planilha.');
         setTimeout(()=>{ goToRoot('tecnico-home'); loadTecnicoDemandas(); }, 900);
       } else {
-        persistDraft();
         if(confirmed){
           const naoEnc = (data.results||[]).filter(r=>r.status==='nao_encontrado');
           toast(naoEnc.length
@@ -931,9 +1017,9 @@
   });
 
   // ---------------- admin: navegação de abas ----------------
-  document.querySelectorAll('.tab').forEach(tab=>{
+  document.querySelectorAll('.admin-tabnav .tab').forEach(tab=>{
     tab.addEventListener('click', ()=>{
-      document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+      document.querySelectorAll('.admin-tabnav .tab').forEach(t=>t.classList.remove('active'));
       tab.classList.add('active');
       adminActiveTab = tab.dataset.adminTab;
       renderAdminActiveTab();
@@ -942,17 +1028,9 @@
   function renderAdminActiveTab(){
     $('adminDemandasTab').style.display = adminActiveTab==='demandas' ? 'block':'none';
     $('adminUsuariosTab').style.display = adminActiveTab==='usuarios' ? 'block':'none';
-    $('fabAdmin').style.display = 'flex';
   }
 
-  $('fabAdmin').addEventListener('click', ()=>{
-    if(currentScreenName==='admin-home'){
-      if(adminActiveTab==='demandas') abrirFormDemanda(null);
-      else abrirFormUsuario(null);
-    }
-  });
-
-  // ---------------- admin: demandas ----------------
+  // ---------------- admin: demandas (dashboard desktop) ----------------
   async function loadAdminDemandas(){
     try{
       const data = await callApi('listarDemandas', {login:session.login, senha:session.senha});
@@ -960,21 +1038,52 @@
       renderAdminDemandas();
     }catch(err){ toast(err.message); }
   }
+
   function renderAdminDemandas(){
-    const wrap = $('adminDemandasTab'); wrap.innerHTML='';
-    if(!demandasAdmin.length){ wrap.innerHTML = emptyHtml('Nenhuma demanda cadastrada. Toque em + para criar.'); return; }
-    demandasAdmin.forEach(d=>{
-      const tecnico = usuarios.find(u=>u.login===d.tecnicoLogin);
-      const el = document.createElement('div');
-      el.className='list-row';
-      el.innerHTML = `
-        <div class="main">
-          <p class="t1">${d.nome}</p>
-          <p class="t2">${tecnico?tecnico.nome:(d.tecnicoLogin||'sem técnico')} · ${d.feitos||0}/${d.total||0} pontos</p>
-        </div>
-        <span class="status-chip ${statusClass(d.status)}">${statusLabel(d.status)}</span>`;
-      el.addEventListener('click', ()=> abrirFormDemanda(d));
-      wrap.appendChild(el);
+    const total = demandasAdmin.length;
+    const concluidas = demandasAdmin.filter(d=>d.status==='concluido').length;
+    const emAndamento = demandasAdmin.filter(d=>d.status==='em_andamento').length;
+    const pendentes = total - concluidas - emAndamento;
+
+    let html = `
+      <div class="stat-cards">
+        <div class="stat-card"><div class="num">${total}</div><div class="label">Total de demandas</div></div>
+        <div class="stat-card"><div class="num">${concluidas}</div><div class="label">Concluídas</div></div>
+        <div class="stat-card"><div class="num">${emAndamento}</div><div class="label">Em andamento</div></div>
+        <div class="stat-card"><div class="num">${pendentes}</div><div class="label">Pendentes</div></div>
+      </div>
+      <div class="admin-toolbar"><button class="btn btn-primary btn-new" id="novaDemandaBtn">+ Nova demanda</button></div>`;
+
+    if(!total){
+      html += emptyHtml('Nenhuma demanda cadastrada ainda.');
+    } else {
+      html += `<table class="admin-table"><thead><tr>
+          <th>Nome / Unidade</th><th>Técnico responsável</th><th>Progresso</th><th>Status</th><th>Planilha</th>
+        </tr></thead><tbody>`;
+      demandasAdmin.forEach(d=>{
+        const tecnico = usuarios.find(u=>u.login===d.tecnicoLogin);
+        const pct = d.total ? Math.round((d.feitos/d.total)*100) : 0;
+        html += `<tr data-id="${esc(d.id)}">
+            <td>${esc(d.nome)}</td>
+            <td class="cell-muted">${tecnico?esc(tecnico.nome):esc(d.tecnicoLogin||'—')}</td>
+            <td>
+              <div class="progress-track mini"><div class="progress-fill" style="width:${pct}%"></div></div>
+              <span class="cell-muted" style="margin-left:8px;">${d.feitos||0}/${d.total||0}</span>
+            </td>
+            <td><span class="status-chip ${statusClass(d.status)}">${statusLabel(d.status)}</span></td>
+            <td><a class="table-link" href="https://docs.google.com/spreadsheets/d/${esc(d.sheetId)}/edit" target="_blank" onclick="event.stopPropagation()">Abrir ↗</a></td>
+          </tr>`;
+      });
+      html += `</tbody></table>`;
+    }
+
+    $('adminDemandasTab').innerHTML = html;
+    $('novaDemandaBtn').addEventListener('click', ()=> abrirFormDemanda(null));
+    $('adminDemandasTab').querySelectorAll('tbody tr').forEach(tr=>{
+      tr.addEventListener('click', ()=>{
+        const d = demandasAdmin.find(x=>String(x.id)===tr.dataset.id);
+        if(d) abrirFormDemanda(d);
+      });
     });
   }
 
@@ -1028,7 +1137,7 @@
     }catch(err){ toast(err.message); }
   });
 
-  // ---------------- admin: usuários ----------------
+  // ---------------- admin: usuários (desktop) ----------------
   async function loadAdminUsuarios(){
     try{
       const data = await callApi('listarUsuarios', {login:session.login, senha:session.senha});
@@ -1036,20 +1145,41 @@
       renderAdminUsuarios();
     }catch(err){ toast(err.message); }
   }
+
   function renderAdminUsuarios(){
-    const wrap = $('adminUsuariosTab'); wrap.innerHTML='';
-    if(!usuarios.length){ wrap.innerHTML = emptyHtml('Nenhum usuário cadastrado ainda.'); return; }
-    usuarios.forEach(u=>{
-      const el = document.createElement('div');
-      el.className='list-row';
-      el.innerHTML = `
-        <div class="main">
-          <p class="t1">${u.nome}</p>
-          <p class="t2">${u.login}</p>
-        </div>
-        <span class="status-chip ${u.papel==='admin'?'em_andamento':'pending'}">${u.papel==='admin'?'Admin':'Técnico'}</span>`;
-      el.addEventListener('click', ()=> abrirFormUsuario(u));
-      wrap.appendChild(el);
+    const total = usuarios.length;
+    const admins = usuarios.filter(u=>u.papel==='admin').length;
+    const tecnicos = total - admins;
+
+    let html = `
+      <div class="stat-cards">
+        <div class="stat-card"><div class="num">${total}</div><div class="label">Total de usuários</div></div>
+        <div class="stat-card"><div class="num">${tecnicos}</div><div class="label">Técnicos</div></div>
+        <div class="stat-card"><div class="num">${admins}</div><div class="label">Administradores</div></div>
+      </div>
+      <div class="admin-toolbar"><button class="btn btn-primary btn-new" id="novoUsuarioBtn">+ Novo usuário</button></div>`;
+
+    if(!total){
+      html += emptyHtml('Nenhum usuário cadastrado ainda.');
+    } else {
+      html += `<table class="admin-table"><thead><tr><th>Nome</th><th>Login</th><th>Papel</th></tr></thead><tbody>`;
+      usuarios.forEach(u=>{
+        html += `<tr data-login="${esc(u.login)}">
+            <td>${esc(u.nome)}</td>
+            <td class="cell-muted">${esc(u.login)}</td>
+            <td><span class="status-chip ${u.papel==='admin'?'em_andamento':'pending'}">${u.papel==='admin'?'Admin':'Técnico'}</span></td>
+          </tr>`;
+      });
+      html += `</tbody></table>`;
+    }
+
+    $('adminUsuariosTab').innerHTML = html;
+    $('novoUsuarioBtn').addEventListener('click', ()=> abrirFormUsuario(null));
+    $('adminUsuariosTab').querySelectorAll('tbody tr').forEach(tr=>{
+      tr.addEventListener('click', ()=>{
+        const u = usuarios.find(x=>x.login===tr.dataset.login);
+        if(u) abrirFormUsuario(u);
+      });
     });
   }
 
