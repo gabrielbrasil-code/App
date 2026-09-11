@@ -418,6 +418,13 @@
         <label>Login</label>
         <input type="text" id="usuarioLoginInput" placeholder="usuario.login" autocapitalize="none">
 
+        <label>E-mail</label>
+        <input type="text" id="usuarioEmailInput" placeholder="usuario@empresa.com" autocapitalize="none">
+        <div class="hint" id="emailHintNovo">Ao salvar, enviamos um e-mail de convite com o link do app, login e senha.</div>
+        <label class="skip-toggle" id="reenviarConviteWrap" style="display:none;">
+          <input type="checkbox" id="reenviarConviteCheck"> Reenviar e-mail de convite com os dados atuais
+        </label>
+
         <label>Senha <span id="senhaOpcionalTag" style="display:none;">(deixe em branco para manter a atual)</span></label>
         <input type="password" id="usuarioSenhaInput" placeholder="••••••••">
 
@@ -1184,11 +1191,12 @@
     if(!total){
       html += emptyHtml('Nenhum usuário cadastrado ainda.');
     } else {
-      html += `<table class="admin-table"><thead><tr><th>Nome</th><th>Login</th><th>Papel</th></tr></thead><tbody>`;
+      html += `<table class="admin-table"><thead><tr><th>Nome</th><th>Login</th><th>E-mail</th><th>Papel</th></tr></thead><tbody>`;
       usuarios.forEach(u=>{
         html += `<tr data-login="${esc(u.login)}">
             <td>${esc(u.nome)}</td>
             <td class="cell-muted">${esc(u.login)}</td>
+            <td class="cell-muted">${esc(u.email)||'—'}</td>
             <td><span class="status-chip ${u.papel==='admin'?'em_andamento':'pending'}">${u.papel==='admin'?'Admin':'Técnico'}</span></td>
           </tr>`;
       });
@@ -1211,27 +1219,36 @@
     $('usuarioFormTitle').textContent = u ? 'Editar usuário' : 'Cadastrar usuário';
     $('usuarioNomeInput').value = u ? u.nome : '';
     $('usuarioLoginInput').value = u ? u.login : '';
+    $('usuarioEmailInput').value = u ? (u.email||'') : '';
     $('usuarioSenhaInput').value = '';
     $('usuarioPapelSelect').value = u ? u.papel : 'tecnico';
     $('senhaOpcionalTag').style.display = u ? 'inline' : 'none';
     $('removerUsuarioWrap').style.display = u ? 'block' : 'none';
+    $('reenviarConviteWrap').style.display = u ? 'flex' : 'none';
+    $('reenviarConviteCheck').checked = false;
+    $('emailHintNovo').style.display = u ? 'none' : 'block';
     goTo('admin-usuario-form');
   }
 
   $('salvarUsuarioBtn').addEventListener('click', async ()=>{
     const nome = $('usuarioNomeInput').value.trim();
     const novoLogin = $('usuarioLoginInput').value.trim();
+    const email = $('usuarioEmailInput').value.trim();
     const novaSenha = $('usuarioSenhaInput').value;
     const papel = $('usuarioPapelSelect').value;
+    const reenviarConvite = $('reenviarConviteCheck').checked;
     if(!nome || !novoLogin){ toast('Preencha nome e login'); return; }
     if(!editingUsuarioLoginOriginal && !novaSenha){ toast('Defina uma senha para o novo usuário'); return; }
+    if(email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ toast('E-mail inválido'); return; }
     try{
-      await callApi('salvarUsuario', {
+      const data = await callApi('salvarUsuario', {
         login:session.login, senha:session.senha,
         loginOriginal: editingUsuarioLoginOriginal || '',
-        novoLogin, novaSenha, nome, papel
+        novoLogin, novaSenha, nome, papel, email, reenviarConvite
       });
-      toast('Usuário salvo');
+      if(data.email==='enviado') toast('Usuário salvo e e-mail de convite enviado');
+      else if(data.email && data.email.indexOf('erro')===0) toast('Usuário salvo, mas o e-mail falhou: '+data.email);
+      else toast('Usuário salvo');
       goBack();
       await loadAdminUsuarios();
       renderAdminDemandas();
