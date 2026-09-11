@@ -474,6 +474,7 @@
 
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jsqr/1.4.0/jsQR.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
 <script>
 (function(){
   const $ = id => document.getElementById(id);
@@ -510,6 +511,8 @@
     try { barcodeDetector = new BarcodeDetector({formats:['qr_code','ean_13','ean_8','code_128','code_39','upc_a']}); } catch(e){}
   }
   let debounceTimers = {};
+  let quaggaBusy = false;
+  let lastQuaggaAttempt = 0;
 
   let screenStack = [];
   let currentScreenName = 'login';
@@ -885,24 +888,57 @@
   function closeCam(){
     if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; }
     scanning=false; camMode=null; camTargetInputId=null;
+    quaggaBusy=false; lastQuaggaAttempt=0;
     $('camModal').classList.remove('show');
   }
 
   function scanLoop(){
-    if(!scanning || camMode!=='code') return;
-    const video = $('camVideo');
-    if(video.readyState===video.HAVE_ENOUGH_DATA){
-      const canvas = $('canvasEl'); const ctx = canvas.getContext('2d');
-      canvas.width = video.videoWidth; canvas.height = video.videoHeight;
-      ctx.drawImage(video,0,0,canvas.width,canvas.height);
-      if(barcodeDetector){
-        barcodeDetector.detect(canvas).then(codes=>{ if(codes && codes.length) onCodeDetected(codes[0].rawValue); }).catch(()=>{});
-      } else if(window.jsQR){
-        const img = ctx.getImageData(0,0,canvas.width,canvas.height);
-        const res = jsQR(img.data, img.width, img.height);
-        if(res && res.data) onCodeDetected(res.data);
+    if(!scanning || camMode!=='code'){ return; }
+    try{
+      const video = $('camVideo');
+      if(video.readyState===video.HAVE_ENOUGH_DATA && video.videoWidth>0){
+        const canvas = $('canvasEl'); const ctx = canvas.getContext('2d');
+        canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+        ctx.drawImage(video,0,0,canvas.width,canvas.height);
+
+        if(barcodeDetector){
+          // Chrome/Android: lê QR e a maioria dos códigos de barras nativamente
+          barcodeDetector.detect(canvas).then(codes=>{
+            if(codes && codes.length && scanning) onCodeDetected(codes[0].rawValue);
+          }).catch(()=>{});
+        } else {
+          // Safari/iPhone não tem BarcodeDetector — usa bibliotecas por fora
+          let achouQR = false;
+          if(window.jsQR){
+            try{
+              const img = ctx.getImageData(0,0,canvas.width,canvas.height);
+              const res = jsQR(img.data, img.width, img.height);
+              if(res && res.data){ onCodeDetected(res.data); achouQR = true; }
+            }catch(e){ /* ignora erro de um quadro isolado e continua tentando */ }
+          }
+          // jsQR só lê QR code. Para código de barras (1D), usa o Quagga,
+          // de forma limitada (a cada ~400ms) porque é mais pesado.
+          if(!achouQR && window.Quagga && !quaggaBusy){
+            const now = Date.now();
+            if(now - lastQuaggaAttempt > 400){
+              lastQuaggaAttempt = now; quaggaBusy = true;
+              const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+              Quagga.decodeSingle({
+                src: dataUrl, numOfWorkers: 0,
+                inputStream: { size: Math.max(canvas.width, canvas.height) },
+                decoder: { readers: ['code_128_reader','ean_reader','ean_8_reader','code_39_reader','upc_reader','upc_e_reader'] },
+                locate: true
+              }, function(result){
+                quaggaBusy = false;
+                if(scanning && camMode==='code' && result && result.codeResult && result.codeResult.code){
+                  onCodeDetected(result.codeResult.code);
+                }
+              });
+            }
+          }
+        }
       }
-    }
+    }catch(e){ /* nunca deixa um erro de leitura travar o loop de escaneamento */ }
     if(scanning) requestAnimationFrame(scanLoop);
   }
 
