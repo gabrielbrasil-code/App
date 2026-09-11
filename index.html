@@ -350,6 +350,7 @@
       <div class="hint" id="autoSyncHint">As alterações deste ponto são enviadas automaticamente para a planilha.</div>
 
       <canvas id="canvasEl"></canvas>
+      <canvas id="canvasQr"></canvas>
     </section>
 
     <!-- ===================== RESUMO / SINCRONIZAR ===================== -->
@@ -911,8 +912,20 @@
           let achouQR = false;
           if(window.jsQR){
             try{
-              const img = ctx.getImageData(0,0,canvas.width,canvas.height);
-              const res = jsQR(img.data, img.width, img.height);
+              // Recorta o centro do quadro e reduz o tamanho antes de decodificar.
+              // No Safari/iPhone o jsQR lê muito melhor uma imagem menor e mais
+              // limpa do que o quadro cru em alta resolução da câmera.
+              const sw = video.videoWidth, sh = video.videoHeight;
+              const cropW = sw*0.72, cropH = sh*0.72;
+              const sx = (sw-cropW)/2, sy = (sh-cropH)/2;
+              const scale = Math.min(1, 640/Math.max(cropW,cropH));
+              const destW = Math.max(1, Math.round(cropW*scale)), destH = Math.max(1, Math.round(cropH*scale));
+              const qrCanvas = $('canvasQr');
+              qrCanvas.width = destW; qrCanvas.height = destH;
+              const qctx = qrCanvas.getContext('2d', { willReadFrequently: true, colorSpace: 'srgb' });
+              qctx.drawImage(video, sx, sy, cropW, cropH, 0, 0, destW, destH);
+              const img = qctx.getImageData(0,0,destW,destH);
+              const res = jsQR(img.data, destW, destH, { inversionAttempts: 'attemptBoth' });
               if(res && res.data){ onCodeDetected(res.data); achouQR = true; }
             }catch(e){ /* ignora erro de um quadro isolado e continua tentando */ }
           }
