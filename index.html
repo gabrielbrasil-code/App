@@ -347,7 +347,7 @@
         <button class="btn btn-ghost btn-sm" id="takePhotoBtn">Tirar foto</button>
       </div>
 
-      <div class="hint" id="autoSyncHint">As alterações deste ponto são enviadas automaticamente para a planilha.</div>
+      <div class="hint" id="autoSyncHint">Preencha pelo menos um dos dois campos (transmissor novo ou sonda nova) — não é obrigatório alterar os dois. As alterações são enviadas automaticamente para a planilha.</div>
 
       <canvas id="canvasEl"></canvas>
     </section>
@@ -683,11 +683,13 @@
       const data = await callApi('getPontosDemanda', {login:session.login, senha:session.senha, sheetId:d.sheetId});
       points = data.pontos.map((p,i)=>{
         const semSonda = String(p.sondaNova||'').trim() === '-';
+        const sondaVal = semSonda ? '' : (p.sondaNova||'');
+        const temDado = !!(p.transNovo) || !!sondaVal;
         return {
           id:'p'+i, xid:p.xid, nome:p.nome,
           transmissorAntigo:p.transmissorAntigo, sondaAntiga:p.sondaAntiga,
-          transNovo:p.transNovo||'', sondaNova: semSonda ? '' : (p.sondaNova||''), noSonda: semSonda,
-          photo:null, status: p.transNovo ? 'done' : 'pending', synced: !!p.transNovo
+          transNovo:p.transNovo||'', sondaNova: sondaVal, noSonda: semSonda,
+          photo:null, status: temDado ? 'done' : 'pending', synced: temDado
         };
       });
       restoreDraft();
@@ -736,7 +738,7 @@
 
   async function autoSyncPoint(p, opts){
     opts = opts || {};
-    if(!p.transNovo && !p.photo) return; // nada relevante ainda pra enviar
+    if(!p.transNovo && !p.sondaNova && !p.photo) return; // nada relevante ainda pra enviar
     const result = await fireApi('sincronizarPontos', {
       login:session.login, senha:session.senha, sheetId: currentDemanda.sheetId,
       concluir:false, registros:[registroDe(p)]
@@ -885,8 +887,8 @@
     const transNovo = $('transNovoInput').value.trim();
     const noSonda = $('noSondaCheck').checked;
     const sondaNova = $('sondaNovaInput').value.trim();
-    if(!transNovo){ toast('Escaneie ou digite o transmissor novo'); return; }
-    if(!noSonda && !sondaNova){ toast('Escaneie a sonda nova ou marque "não usa sonda separada"'); return; }
+    if(noSonda && !transNovo){ toast('Este ponto não usa sonda — informe ao menos o transmissor novo'); return; }
+    if(!noSonda && !transNovo && !sondaNova){ toast('Informe ao menos o transmissor novo ou a sonda nova'); return; }
     p.transNovo = transNovo; p.sondaNova = noSonda ? '' : sondaNova; p.noSonda = noSonda; p.status = 'done';
     persistDraft();
     clearTimeout(debounceTimers[p.id]);
