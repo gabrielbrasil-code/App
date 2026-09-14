@@ -681,12 +681,15 @@
     toast('Carregando pontos…');
     try{
       const data = await callApi('getPontosDemanda', {login:session.login, senha:session.senha, sheetId:d.sheetId});
-      points = data.pontos.map((p,i)=>({
-        id:'p'+i, xid:p.xid, nome:p.nome,
-        transmissorAntigo:p.transmissorAntigo, sondaAntiga:p.sondaAntiga,
-        transNovo:p.transNovo||'', sondaNova:p.sondaNova||'', noSonda:false,
-        photo:null, status: p.transNovo ? 'done' : 'pending', synced: !!p.transNovo
-      }));
+      points = data.pontos.map((p,i)=>{
+        const semSonda = String(p.sondaNova||'').trim() === '-';
+        return {
+          id:'p'+i, xid:p.xid, nome:p.nome,
+          transmissorAntigo:p.transmissorAntigo, sondaAntiga:p.sondaAntiga,
+          transNovo:p.transNovo||'', sondaNova: semSonda ? '' : (p.sondaNova||''), noSonda: semSonda,
+          photo:null, status: p.transNovo ? 'done' : 'pending', synced: !!p.transNovo
+        };
+      });
       restoreDraft();
       $('topTitle').textContent = d.nome;
       $('topSub').textContent = session.nome;
@@ -728,7 +731,7 @@
 
   // ---------------- envio automático (sem esperar clique em "Sincronizar") ----------------
   function registroDe(p){
-    return { xid:p.xid, transmissor_novo:p.transNovo, sonda_nova: p.noSonda ? '' : p.sondaNova, foto_base64: p.photo || null };
+    return { xid:p.xid, transmissor_novo:p.transNovo, sonda_nova: p.noSonda ? '-' : p.sondaNova, foto_base64: p.photo || null };
   }
 
   async function autoSyncPoint(p, opts){
@@ -845,6 +848,38 @@
     if(p){ p.sondaNova = e.target.value; persistDraft(); scheduleAutoSync(p, 1500); }
   });
 
+  // pontos "irmãos": mesmo transmissor E mesma sonda antigos = mesmo equipamento
+  // físico registrado duas vezes (ex: temperatura e umidade do mesmo ambiente)
+  function findSiblings(p){
+    const ta = (p.transmissorAntigo||'').trim().toLowerCase();
+    const sa = (p.sondaAntiga||'').trim().toLowerCase();
+    if(!ta || !sa) return [];
+    return points.filter(x => x.id!==p.id &&
+      (x.transmissorAntigo||'').trim().toLowerCase()===ta &&
+      (x.sondaAntiga||'').trim().toLowerCase()===sa
+    );
+  }
+
+  function applyToSiblings(p){
+    const siblings = findSiblings(p);
+    if(!siblings.length) return;
+    let aplicados = 0, conflitos = 0;
+    siblings.forEach(s=>{
+      const jaIgual = s.transNovo===p.transNovo && s.sondaNova===p.sondaNova && s.noSonda===p.noSonda;
+      if(jaIgual) return;
+      if(s.status==='done' && s.transNovo){
+        conflitos++; // já confirmado com outro valor — não sobrescreve sozinho
+        return;
+      }
+      s.transNovo = p.transNovo; s.sondaNova = p.sondaNova; s.noSonda = p.noSonda; s.status = 'done';
+      aplicados++;
+      autoSyncPoint(s, {silent:true});
+    });
+    if(aplicados||conflitos) persistDraft();
+    if(aplicados) toast('Mesmo transmissor/sonda antigos de outro ponto — dados aplicados automaticamente em '+aplicados+' ponto(s)');
+    if(conflitos) toast(conflitos+' ponto(s) irmão(s) já tinham outro valor preenchido — confira manualmente');
+  }
+
   $('savePointBtn').addEventListener('click', ()=>{
     const p = points.find(x=>x.id===currentPointId);
     const transNovo = $('transNovoInput').value.trim();
@@ -856,6 +891,7 @@
     persistDraft();
     clearTimeout(debounceTimers[p.id]);
     autoSyncPoint(p, {silent:false});
+    applyToSiblings(p);
     goBack();
   });
 
