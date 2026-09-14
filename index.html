@@ -449,7 +449,8 @@
     <button class="btn btn-ok" id="goSummaryBtn">Ver resumo da visita</button>
   </div>
   <div class="footer-fixed" id="footer-capture" style="display:none;">
-    <button class="btn btn-primary" id="savePointBtn">Salvar ponto</button>
+    <button class="btn btn-primary" id="savePointBtn" style="margin-bottom:9px;">Salvar ponto</button>
+    <button class="btn btn-ghost btn-sm" id="clearPointBtn" style="width:100%;color:var(--danger);">Limpar ponto</button>
   </div>
   <div class="footer-fixed" id="footer-summary" style="display:none;">
     <button class="btn btn-primary" id="syncBtn" style="margin-bottom:9px;">Sincronizar novamente</button>
@@ -895,6 +896,29 @@
     autoSyncPoint(p, {silent:false});
     applyToSiblings(p);
     goBack();
+  });
+
+  $('clearPointBtn').addEventListener('click', async ()=>{
+    const p = points.find(x=>x.id===currentPointId);
+    if(!p) return;
+    if(!confirm('Isso apaga o transmissor novo, a sonda nova e a foto deste ponto — inclusive na planilha. Pontos irmãos não são afetados. Continuar?')) return;
+
+    clearTimeout(debounceTimers[p.id]);
+    p.transNovo = ''; p.sondaNova = ''; p.noSonda = false; p.photo = null; p.status = 'pending'; p.synced = false;
+    persistDraft();
+
+    $('transNovoInput').value = '';
+    $('sondaNovaInput').value = ''; $('sondaNovaInput').disabled = false;
+    $('noSondaCheck').checked = false;
+    $('photoBox').innerHTML = '<div class="photo-placeholder">Nenhuma foto registrada</div>';
+    updateSyncIndicator();
+
+    const result = await fireApi('sincronizarPontos', {
+      login:session.login, senha:session.senha, sheetId: currentDemanda.sheetId,
+      concluir:false, registros:[{ xid:p.xid, transmissor_novo:'', sonda_nova:'', limpar:true, foto_base64:null }]
+    });
+    toast(result.confirmed ? 'Ponto limpo na planilha' : 'Limpo aqui — sem confirmação da planilha (verifique manualmente)');
+    if(currentScreenName==='capture') { /* permanece na tela pro técnico preencher de novo, se for o caso */ }
   });
 
   // ---------------- câmera (scan + foto) ----------------
