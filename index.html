@@ -136,6 +136,8 @@
   .cam-modal{position:fixed;inset:0;background:#000;z-index:200;display:none;flex-direction:column;}
   .cam-modal.show{display:flex;}
   .cam-modal video{flex:1;width:100%;object-fit:cover;}
+  #qrReaderContainer{overflow:hidden;position:relative;background:#000;}
+  #qrReaderContainer video{width:100% !important;height:100% !important;object-fit:cover !important;}
   .cam-top{position:absolute;top:0;left:0;right:0;padding:16px;display:flex;justify-content:space-between;
     align-items:center;z-index:2;}
   .cam-top .label{color:#fff;font-size:13px;font-weight:600;background:rgba(0,0,0,.45);padding:7px 12px;border-radius:20px;}
@@ -467,6 +469,7 @@
       <button class="cam-close" id="camClose">✕</button>
     </div>
     <video id="camVideo" autoplay playsinline muted></video>
+    <div id="qrReaderContainer" style="flex:1;width:100%;display:none;"></div>
     <div class="cam-frame" id="camFrame"></div>
     <div class="cam-bottom" id="camBottom">
       <div class="cam-hint">Aponte a câmera para o código de barras ou QR code</div>
@@ -474,7 +477,7 @@
   </div>
 
 </div>
-<script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.23.0/umd/index.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script>
 (function(){
   const $ = id => document.getElementById(id);
@@ -510,17 +513,12 @@
 
   // Leitor único (QR + código de barras) que funciona em qualquer navegador,
   // inclusive Safari/iPhone, sem depender de nenhuma API nativa do aparelho.
-  let codeReader = null;
-  if (window.ZXing) {
-    const hints = new Map();
-    hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [
-      ZXing.BarcodeFormat.QR_CODE, ZXing.BarcodeFormat.CODE_128, ZXing.BarcodeFormat.EAN_13,
-      ZXing.BarcodeFormat.EAN_8, ZXing.BarcodeFormat.CODE_39, ZXing.BarcodeFormat.UPC_A,
-      ZXing.BarcodeFormat.UPC_E, ZXing.BarcodeFormat.ITF, ZXing.BarcodeFormat.CODABAR,
-      ZXing.BarcodeFormat.DATA_MATRIX
-    ]);
-    hints.set(ZXing.DecodeHintType.TRY_HARDER, true);
-    try { codeReader = new ZXing.BrowserMultiFormatReader(hints); } catch(e){ codeReader = null; }
+  // A instância é criada/destruída a cada abertura da câmera (ver openCam/closeCam).
+  let html5QrCode = null;
+  function formatosSuportados(){
+    if(!window.Html5QrcodeSupportedFormats) return undefined;
+    const F = Html5QrcodeSupportedFormats;
+    return [F.QR_CODE, F.CODE_128, F.EAN_13, F.EAN_8, F.CODE_39, F.UPC_A, F.UPC_E, F.ITF, F.CODABAR, F.DATA_MATRIX];
   }
 
   let screenStack = [];
@@ -931,12 +929,51 @@
   async function openCam(mode, targetId, label){
     camMode = mode; camTargetInputId = targetId;
     $('camLabel').textContent = mode==='photo' ? 'Foto — '+label : 'Escaneando — '+label;
-    $('camFrame').style.display = mode==='code' ? 'block':'none';
+    $('camFrame').style.display = 'none';
     $('camBottom').innerHTML = mode==='photo'
       ? '<div class="cam-shutter" id="camShutter"></div>'
       : '<div class="cam-hint">Aponte a câmera para o código de barras ou QR code</div>';
     if(mode==='photo') $('camShutter').addEventListener('click', capturePhoto);
 
+    if(mode==='code'){
+      $('camVideo').style.display = 'none';
+      $('qrReaderContainer').style.display = 'block';
+      $('qrReaderContainer').innerHTML = '';
+      if(!window.Html5Qrcode){ toast('Leitor de código não carregou — verifique sua conexão e recarregue a página.'); return; }
+      $('camModal').classList.add('show');
+      scanning = true;
+      try{
+        html5QrCode = new Html5Qrcode('qrReaderContainer', {
+          formatsToSupport: formatosSuportados(),
+          experimentalFeatures: { useBarCodeDetectorIfSupported: true },
+          verbose: false
+        });
+        await html5QrCode.start(
+          { facingMode: 'environment' },
+          { fps: 10, qrbox: { width: 260, height: 260 }, aspectRatio: 1.0 },
+          (decodedText) => {
+            if(!scanning || camMode!=='code') return; // modal já foi fechado ou trocou de modo
+            onCodeDetected(decodedText);
+          },
+          () => { /* "não achou nada neste quadro" — esperado a cada tentativa, ignora */ }
+        );
+      }catch(e){
+        const s = String(e && e.message ? e.message : e);
+        let msg = 'Não foi possível acessar a câmera neste dispositivo.';
+        if(/NotAllowedError|Permission/i.test(s)) msg='Permissão de câmera negada. Verifique as permissões do site.';
+        else if(/NotFoundError/i.test(s)) msg='Nenhuma câmera encontrada neste dispositivo.';
+        else if(/NotReadableError/i.test(s)) msg='A câmera está sendo usada por outro aplicativo.';
+        else if(!navigator.mediaDevices) msg='API de câmera indisponível neste navegador ('+location.protocol+'//'+location.host+').';
+        toast(msg);
+        $('camModal').classList.remove('show');
+        scanning=false;
+      }
+      return;
+    }
+
+    // modo 'foto': captura manual (a html5-qrcode é só para leitura de código)
+    $('camVideo').style.display = '';
+    $('qrReaderContainer').style.display = 'none';
     try{
       stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
     }catch(e){
@@ -952,19 +989,16 @@
     $('camVideo').srcObject = stream;
     $('camModal').classList.add('show');
     scanning = true;
-
-    if(mode==='code'){
-      if(!codeReader){ toast('Leitor de código não carregou — verifique sua conexão e recarregue a página.'); return; }
-      codeReader.decodeFromStream(stream, $('camVideo'), (result, err) => {
-        if(!scanning || camMode!=='code') return; // modal já foi fechado ou trocou de modo
-        if(result){ onCodeDetected(result.getText()); }
-        // err normalmente é "não achou nada neste quadro" (NotFoundException) — esperado, ignora
-      }).catch(()=>{ /* erro ao iniciar o decode a partir do stream — já tratado pelo toast acima se faltar câmera */ });
-    }
   }
 
   function closeCam(){
-    if(codeReader){ try{ codeReader.reset(); }catch(e){} }
+    if(html5QrCode){
+      const reader = html5QrCode;
+      html5QrCode = null;
+      try{
+        reader.stop().then(()=>{ try{ reader.clear(); }catch(e){} }).catch(()=>{});
+      }catch(e){}
+    }
     if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; }
     scanning=false; camMode=null; camTargetInputId=null;
     $('camModal').classList.remove('show');
