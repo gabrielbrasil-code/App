@@ -466,7 +466,10 @@
   <div class="cam-modal" id="camModal">
     <div class="cam-top">
       <span class="label" id="camLabel">Escaneando…</span>
-      <button class="cam-close" id="camClose">✕</button>
+      <div style="display:flex;gap:8px;">
+        <button class="cam-close" id="camTorchBtn" style="display:none;">🔦</button>
+        <button class="cam-close" id="camClose">✕</button>
+      </div>
     </div>
     <video id="camVideo" autoplay playsinline muted></video>
     <div id="qrReaderContainer" style="flex:1;width:100%;display:none;"></div>
@@ -511,10 +514,9 @@
   let camTargetInputId = null;
   let debounceTimers = {};
 
-  // Leitor único (QR + código de barras) que funciona em qualquer navegador,
-  // inclusive Safari/iPhone, sem depender de nenhuma API nativa do aparelho.
-  // A instância é criada/destruída a cada abertura da câmera (ver openCam/closeCam).
-  let html5QrCode = null;
+  // Leitura de QR/código de barras a partir de uma FOTO capturada (não mais
+  // vídeo ao vivo) — funciona em qualquer navegador, inclusive Safari/iPhone.
+  // Uma instância nova da html5-qrcode é criada a cada tentativa de leitura.
   function formatosSuportados(){
     if(!window.Html5QrcodeSupportedFormats) return undefined;
     const F = Html5QrcodeSupportedFormats;
@@ -595,18 +597,40 @@
     document.getElementById('app').classList.toggle('admin-mode', !!(session && session.papel==='admin' && name!=='login'));
     window.scrollTo(0,0);
   }
-  function goTo(name){ screenStack.push(currentScreenName); currentScreenName = name; showScreen(name); }
-  function goToRoot(name){ screenStack = []; currentScreenName = name; showScreen(name); }
+
+  // sincroniza nossa navegação por telas com o histórico real do navegador,
+  // pra que o gesto/botão nativo de "voltar" feche a etapa atual em vez de
+  // sair do site inteiro (que era o problema relatado)
+  let suppressPopstate = false;
+  let cameraHistoryPushed = false;
+  function pushHistory(marker){ try{ history.pushState({marker}, '', location.href); }catch(e){} }
+  function replaceHistory(marker){ try{ history.replaceState({marker}, '', location.href); }catch(e){} }
+
+  function applyScreen(name){
+    currentScreenName = name;
+    showScreen(name);
+    if(name==='list') renderList();
+    if(name==='tecnico-home') renderTecnicoDemandasList();
+    if(name==='admin-home') renderAdminActiveTab();
+  }
+
+  function goTo(name){ screenStack.push(currentScreenName); currentScreenName = name; showScreen(name); pushHistory(name); }
+  function goToRoot(name){ screenStack = []; currentScreenName = name; showScreen(name); replaceHistory(name); }
   function goBack(){
     if(!screenStack.length) return;
     const prev = screenStack.pop();
-    currentScreenName = prev;
-    showScreen(prev);
-    if(prev==='list') renderList();
-    if(prev==='tecnico-home') renderTecnicoDemandasList();
-    if(prev==='admin-home') renderAdminActiveTab();
+    applyScreen(prev);
+    suppressPopstate = true;
+    try{ history.back(); }catch(e){}
   }
   $('backBtn').addEventListener('click', goBack);
+
+  window.addEventListener('popstate', ()=>{
+    if(suppressPopstate){ suppressPopstate = false; return; }
+    if(cameraHistoryPushed){ cameraHistoryPushed = false; closeCam(true); return; }
+    if(screenStack.length){ const prev = screenStack.pop(); applyScreen(prev); }
+    // se já estava numa tela raiz (sem histórico interno), deixa o navegador seguir normalmente
+  });
 
   // ---------------- login ----------------
   function showLoginError(msg){ $('loginError').textContent = msg; $('loginError').style.display='block'; }
@@ -926,54 +950,35 @@
   $('takePhotoBtn').addEventListener('click', ()=> openCam('photo', null, 'Foto do ponto'));
   $('camClose').addEventListener('click', closeCam);
 
+  function setupTorchButton(){
+    const btn = $('camTorchBtn');
+    btn.style.display = 'none';
+    btn.textContent = '🔦';
+    btn.onclick = null;
+    try{
+      const track = stream && stream.getVideoTracks()[0];
+      if(!track || !track.getCapabilities) return;
+      const caps = track.getCapabilities();
+      if(caps && caps.torch){
+        let ligada = false;
+        btn.style.display = 'flex';
+        btn.onclick = ()=>{
+          ligada = !ligada;
+          track.applyConstraints({advanced:[{torch:ligada}]}).catch(()=>{ toast('Não foi possível controlar a lanterna neste aparelho'); });
+          btn.textContent = ligada ? '🔆' : '🔦';
+        };
+      }
+    }catch(e){ /* aparelho/navegador sem suporte a lanterna — botão continua oculto */ }
+  }
+
   async function openCam(mode, targetId, label){
     camMode = mode; camTargetInputId = targetId;
-    $('camLabel').textContent = mode==='photo' ? 'Foto — '+label : 'Escaneando — '+label;
-    $('camFrame').style.display = 'none';
-    $('camBottom').innerHTML = mode==='photo'
-      ? '<div class="cam-shutter" id="camShutter"></div>'
-      : '<div class="cam-hint">Aponte a câmera para o código de barras ou QR code</div>';
-    if(mode==='photo') $('camShutter').addEventListener('click', capturePhoto);
-
-    if(mode==='code'){
-      $('camVideo').style.display = 'none';
-      $('qrReaderContainer').style.display = 'block';
-      $('qrReaderContainer').innerHTML = '';
-      if(!window.Html5Qrcode){ toast('Leitor de código não carregou — verifique sua conexão e recarregue a página.'); return; }
-      $('camModal').classList.add('show');
-      scanning = true;
-      try{
-        html5QrCode = new Html5Qrcode('qrReaderContainer', {
-          formatsToSupport: formatosSuportados(),
-          experimentalFeatures: { useBarCodeDetectorIfSupported: true },
-          verbose: false
-        });
-        await html5QrCode.start(
-          { facingMode: 'environment' },
-          { fps: 10, qrbox: { width: 260, height: 260 }, aspectRatio: 1.0 },
-          (decodedText) => {
-            if(!scanning || camMode!=='code') return; // modal já foi fechado ou trocou de modo
-            onCodeDetected(decodedText);
-          },
-          () => { /* "não achou nada neste quadro" — esperado a cada tentativa, ignora */ }
-        );
-      }catch(e){
-        const s = String(e && e.message ? e.message : e);
-        let msg = 'Não foi possível acessar a câmera neste dispositivo.';
-        if(/NotAllowedError|Permission/i.test(s)) msg='Permissão de câmera negada. Verifique as permissões do site.';
-        else if(/NotFoundError/i.test(s)) msg='Nenhuma câmera encontrada neste dispositivo.';
-        else if(/NotReadableError/i.test(s)) msg='A câmera está sendo usada por outro aplicativo.';
-        else if(!navigator.mediaDevices) msg='API de câmera indisponível neste navegador ('+location.protocol+'//'+location.host+').';
-        toast(msg);
-        $('camModal').classList.remove('show');
-        scanning=false;
-      }
-      return;
-    }
-
-    // modo 'foto': captura manual (a html5-qrcode é só para leitura de código)
+    $('camLabel').textContent = mode==='photo' ? 'Foto — '+label : 'Capturar código — '+label;
+    $('camFrame').style.display = mode==='code' ? 'block' : 'none';
+    $('camBottom').innerHTML = '<div class="cam-shutter" id="camShutter"></div>';
+    $('camShutter').addEventListener('click', handleShutterTap);
     $('camVideo').style.display = '';
-    $('qrReaderContainer').style.display = 'none';
+
     try{
       stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
     }catch(e){
@@ -989,19 +994,22 @@
     $('camVideo').srcObject = stream;
     $('camModal').classList.add('show');
     scanning = true;
+    cameraHistoryPushed = true; pushHistory('camera');
+    setupTorchButton();
   }
 
-  function closeCam(){
-    if(html5QrCode){
-      const reader = html5QrCode;
-      html5QrCode = null;
-      try{
-        reader.stop().then(()=>{ try{ reader.clear(); }catch(e){} }).catch(()=>{});
-      }catch(e){}
-    }
+  function closeCam(fromPopstate){
     if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; }
     scanning=false; camMode=null; camTargetInputId=null;
+    $('camTorchBtn').style.display='none'; $('camTorchBtn').textContent='🔦'; $('camTorchBtn').onclick=null;
     $('camModal').classList.remove('show');
+    if(cameraHistoryPushed && !fromPopstate){
+      cameraHistoryPushed = false;
+      suppressPopstate = true;
+      try{ history.back(); }catch(e){}
+    } else {
+      cameraHistoryPushed = false;
+    }
   }
 
   function onCodeDetected(value){
@@ -1033,19 +1041,58 @@
     else if(matches.length===0) toast('Nenhum ponto encontrado para esse código — lista filtrada por texto parcial');
   }
 
-  function capturePhoto(){
+  // um único toque de obturador serve pros dois casos: guarda como foto do
+  // ponto, ou tenta ler QR/código de barras na imagem capturada (mais
+  // confiável que tentar ler direto do vídeo ao vivo, que é o que estava
+  // falhando em vários aparelhos)
+  function handleShutterTap(){
     const video = $('camVideo');
     const canvas = $('canvasEl'); const ctx = canvas.getContext('2d', { willReadFrequently: true, colorSpace: 'srgb' });
     canvas.width = video.videoWidth; canvas.height = video.videoHeight;
     ctx.drawImage(video,0,0,canvas.width,canvas.height);
-    const dataUrl = canvas.toDataURL('image/jpeg',0.8);
-    const p = points.find(x=>x.id===currentPointId);
-    p.photo = dataUrl;
-    $('photoBox').innerHTML = `<img src="${dataUrl}">`;
-    persistDraft();
-    toast('Foto capturada — enviando…');
-    autoSyncPoint(p, {silent:true});
-    closeCam();
+
+    if(camMode==='photo'){
+      const dataUrl = canvas.toDataURL('image/jpeg',0.8);
+      const p = points.find(x=>x.id===currentPointId);
+      p.photo = dataUrl;
+      $('photoBox').innerHTML = `<img src="${dataUrl}">`;
+      persistDraft();
+      toast('Foto capturada — enviando…');
+      autoSyncPoint(p, {silent:true});
+      closeCam();
+      return;
+    }
+
+    // camMode === 'code': decodifica a foto capturada em vez do vídeo ao vivo
+    if(!window.Html5Qrcode){ toast('Leitor de código não carregou — verifique sua conexão e recarregue a página.'); return; }
+    const shutter = $('camShutter');
+    shutter.style.opacity = '0.4'; shutter.style.pointerEvents = 'none';
+    $('camLabel').textContent = 'Lendo código…';
+
+    canvas.toBlob(blob=>{
+      if(!blob){ toast('Falha ao capturar a imagem — tente de novo'); reabilitarObturador(); return; }
+      const file = new File([blob], 'codigo.jpg', { type:'image/jpeg' });
+      const leitor = new Html5Qrcode('qrReaderContainer', { formatsToSupport: formatosSuportados(), verbose:false });
+      leitor.scanFileV2(file, false)
+        .then(resultado=>{
+          const texto = resultado && resultado.decodedText ? resultado.decodedText : (typeof resultado==='string' ? resultado : null);
+          try{ leitor.clear(); }catch(e){}
+          if(texto){ onCodeDetected(texto); }
+          else{ toast('Nenhum código encontrado nessa foto — tente de novo, mais perto ou com mais luz'); reabilitarObturador(); }
+        })
+        .catch(()=>{
+          try{ leitor.clear(); }catch(e){}
+          toast('Não conseguiu ler o código nessa foto — aproxime mais, melhore a luz ou tente de novo');
+          reabilitarObturador();
+        });
+    }, 'image/jpeg', 0.92);
+  }
+
+  function reabilitarObturador(){
+    if(camMode!=='code' || !scanning) return;
+    const shutter = $('camShutter');
+    if(shutter){ shutter.style.opacity=''; shutter.style.pointerEvents=''; }
+    $('camLabel').textContent = 'Capturar código — '+(camTargetInputId||'');
   }
 
   // ---------------- resumo / sincronização manual (retry) ----------------
@@ -1365,6 +1412,7 @@
   });
 
   // ---------------- inicialização ----------------
+  replaceHistory('login');
   if(session){
     afterLogin();
   } else {
