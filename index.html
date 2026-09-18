@@ -1064,44 +1064,74 @@
       return;
     }
 
-    // camMode === 'code': decodifica a foto capturada em vez do vídeo ao vivo
+    // camMode === 'code': decodifica a foto capturada em vez do vídeo ao vivo,
+    // tentando em algumas rotações — etiquetas em campo raramente ficam
+    // perfeitamente alinhadas com o celular
     if(!window.Html5Qrcode){ toast('Leitor de código não carregou — verifique sua conexão e recarregue a página.'); return; }
     const shutter = $('camShutter');
     shutter.style.opacity = '0.4'; shutter.style.pointerEvents = 'none';
     $('camLabel').textContent = 'Lendo código…';
+    tentarRotacoes(canvas, [0, 90, 180, 270], 0);
+  }
 
+  function criarCanvasRotacionado(origem, graus){
+    const c = document.createElement('canvas');
+    const ctx = c.getContext('2d', { willReadFrequently: true, colorSpace: 'srgb' });
+    if(graus===90 || graus===270){ c.width = origem.height; c.height = origem.width; }
+    else { c.width = origem.width; c.height = origem.height; }
+    ctx.translate(c.width/2, c.height/2);
+    ctx.rotate(graus*Math.PI/180);
+    ctx.drawImage(origem, -origem.width/2, -origem.height/2);
+    return c;
+  }
+
+  function tentarRotacoes(canvasOriginal, angulos, indice){
+    if(indice >= angulos.length){
+      toast('Não conseguiu ler o código nessa foto — aproxime mais, alinhe melhor ou tente de novo');
+      reabilitarObturador();
+      return;
+    }
+    $('camLabel').textContent = 'Lendo código… ('+(indice+1)+'/'+angulos.length+')';
+    const angulo = angulos[indice];
+    const canvasTeste = angulo===0 ? canvasOriginal : criarCanvasRotacionado(canvasOriginal, angulo);
+    decodificarCanvas(canvasTeste, (texto)=>{
+      if(texto){ onCodeDetected(texto); }
+      else{ tentarRotacoes(canvasOriginal, angulos, indice+1); }
+    });
+  }
+
+  // tenta primeiro a html5-qrcode (QR + código de barras) e, se não achar
+  // nada, tenta o jsQR (só QR, mas roda direto nos pixels, sem depender de
+  // nenhum elemento de página) — ambos na mesma orientação testada
+  function decodificarCanvas(canvas, callback){
     canvas.toBlob(blob=>{
-      if(!blob){ toast('Falha ao capturar a imagem — tente de novo'); reabilitarObturador(); return; }
+      if(!blob){ callback(null); return; }
       const file = new File([blob], 'codigo.jpg', { type:'image/jpeg' });
       const leitor = new Html5Qrcode('qrReaderContainer', { formatsToSupport: formatosSuportados(), verbose:false });
       leitor.scanFileV2(file, false)
         .then(resultado=>{
           const texto = resultado && resultado.decodedText ? resultado.decodedText : (typeof resultado==='string' ? resultado : null);
           try{ leitor.clear(); }catch(e){}
-          if(texto){ onCodeDetected(texto); }
-          else{ tentarFallbackJsQR(canvas); }
+          if(texto){ callback(texto); return; }
+          tentarJsQR(canvas, callback);
         })
         .catch(()=>{
           try{ leitor.clear(); }catch(e){}
-          tentarFallbackJsQR(canvas);
+          tentarJsQR(canvas, callback);
         });
     }, 'image/jpeg', 0.92);
   }
 
-  // segunda tentativa: roda o jsQR direto nos pixels da mesma foto (só QR
-  // code, mas não depende de nenhum elemento de página — serve de rede de
-  // segurança quando a html5-qrcode falha em algum navegador específico)
-  function tentarFallbackJsQR(canvas){
+  function tentarJsQR(canvas, callback){
     try{
       if(window.jsQR){
         const ctx = canvas.getContext('2d', { willReadFrequently: true, colorSpace: 'srgb' });
         const img = ctx.getImageData(0,0,canvas.width,canvas.height);
         const res = jsQR(img.data, img.width, img.height, { inversionAttempts: 'attemptBoth' });
-        if(res && res.data){ onCodeDetected(res.data); return; }
+        if(res && res.data){ callback(res.data); return; }
       }
-    }catch(e){ /* segue pro aviso de falha abaixo */ }
-    toast('Não conseguiu ler o código nessa foto — aproxime mais, melhore a luz ou tente de novo');
-    reabilitarObturador();
+    }catch(e){ /* ignora e conta como não encontrado nesta rotação */ }
+    callback(null);
   }
 
   function reabilitarObturador(){
