@@ -136,7 +136,7 @@
   .cam-modal{position:fixed;inset:0;background:#000;z-index:200;display:none;flex-direction:column;}
   .cam-modal.show{display:flex;}
   .cam-modal video{flex:1;width:100%;object-fit:cover;}
-  #qrReaderContainer{overflow:hidden;position:relative;background:#000;}
+  #qrReaderContainer{position:fixed;left:-9999px;top:-9999px;width:900px;height:900px;overflow:hidden;background:#000;}
   #qrReaderContainer video{width:100% !important;height:100% !important;object-fit:cover !important;}
   .cam-top{position:absolute;top:0;left:0;right:0;padding:16px;display:flex;justify-content:space-between;
     align-items:center;z-index:2;}
@@ -472,7 +472,7 @@
       </div>
     </div>
     <video id="camVideo" autoplay playsinline muted></video>
-    <div id="qrReaderContainer" style="flex:1;width:100%;display:none;"></div>
+    <div id="qrReaderContainer"></div>
     <div class="cam-frame" id="camFrame"></div>
     <div class="cam-bottom" id="camBottom">
       <div class="cam-hint">Aponte a câmera para o código de barras ou QR code</div>
@@ -481,6 +481,7 @@
 
 </div>
 <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
 <script>
 (function(){
   const $ = id => document.getElementById(id);
@@ -1078,14 +1079,29 @@
           const texto = resultado && resultado.decodedText ? resultado.decodedText : (typeof resultado==='string' ? resultado : null);
           try{ leitor.clear(); }catch(e){}
           if(texto){ onCodeDetected(texto); }
-          else{ toast('Nenhum código encontrado nessa foto — tente de novo, mais perto ou com mais luz'); reabilitarObturador(); }
+          else{ tentarFallbackJsQR(canvas); }
         })
         .catch(()=>{
           try{ leitor.clear(); }catch(e){}
-          toast('Não conseguiu ler o código nessa foto — aproxime mais, melhore a luz ou tente de novo');
-          reabilitarObturador();
+          tentarFallbackJsQR(canvas);
         });
     }, 'image/jpeg', 0.92);
+  }
+
+  // segunda tentativa: roda o jsQR direto nos pixels da mesma foto (só QR
+  // code, mas não depende de nenhum elemento de página — serve de rede de
+  // segurança quando a html5-qrcode falha em algum navegador específico)
+  function tentarFallbackJsQR(canvas){
+    try{
+      if(window.jsQR){
+        const ctx = canvas.getContext('2d', { willReadFrequently: true, colorSpace: 'srgb' });
+        const img = ctx.getImageData(0,0,canvas.width,canvas.height);
+        const res = jsQR(img.data, img.width, img.height, { inversionAttempts: 'attemptBoth' });
+        if(res && res.data){ onCodeDetected(res.data); return; }
+      }
+    }catch(e){ /* segue pro aviso de falha abaixo */ }
+    toast('Não conseguiu ler o código nessa foto — aproxime mais, melhore a luz ou tente de novo');
+    reabilitarObturador();
   }
 
   function reabilitarObturador(){
