@@ -246,6 +246,11 @@
 </head>
 <body>
 <div id="app">
+  <div id="updateBanner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:400;
+    background:var(--accent);color:#fff;padding:10px 16px;text-align:center;font-size:13px;
+    font-weight:600;cursor:pointer;">
+    Nova versão disponível — toque para atualizar
+  </div>
 
   <!-- TOPBAR (oculto na tela de login) -->
   <div class="topbar" id="topbar" style="display:none;">
@@ -482,10 +487,13 @@
 </div>
 <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@7.0.0/dist/tesseract.min.js"></script>
 <script>
 (function(){
   const $ = id => document.getElementById(id);
+
+  // Muda sempre que uma nova versão do app é publicada — usado para detectar
+  // automaticamente quando há uma atualização disponível no GitHub Pages.
+  const APP_BUILD = '2026-09-20-1';
 
   // ---------------- CONFIGURAÇÃO FIXA DO SERVIDOR ----------------
   // Cole aqui a URL do Apps Script central (Implantar > Nova implantação > /exec).
@@ -835,7 +843,11 @@
       renderList();
     });
   });
-  $('searchInput').addEventListener('input', e=>{ searchQuery = e.target.value.trim().toLowerCase(); renderList(); });
+  $('searchInput').addEventListener('input', e=>{
+    forcarMaiusculo(e.target);
+    searchQuery = e.target.value.trim().toLowerCase();
+    renderList();
+  });
 
   $('goSummaryBtn').addEventListener('click', ()=>{ goTo('summary'); renderSummary(); });
 
@@ -867,11 +879,22 @@
     const p = points.find(x=>x.id===currentPointId);
     if(p){ p.noSonda = e.target.checked; if(e.target.checked) p.sondaNova=''; persistDraft(); scheduleAutoSync(p, 1200); }
   });
+  function forcarMaiusculo(el){
+    const inicio = el.selectionStart, fim = el.selectionEnd;
+    const maiusculo = el.value.toUpperCase();
+    if(maiusculo !== el.value){
+      el.value = maiusculo;
+      try{ el.setSelectionRange(inicio, fim); }catch(e){}
+    }
+  }
+
   $('transNovoInput').addEventListener('input', e=>{
+    forcarMaiusculo(e.target);
     const p = points.find(x=>x.id===currentPointId);
     if(p){ p.transNovo = e.target.value; persistDraft(); updateSyncIndicator(); scheduleAutoSync(p, 1500); }
   });
   $('sondaNovaInput').addEventListener('input', e=>{
+    forcarMaiusculo(e.target);
     const p = points.find(x=>x.id===currentPointId);
     if(p){ p.sondaNova = e.target.value; persistDraft(); scheduleAutoSync(p, 1500); }
   });
@@ -1015,8 +1038,8 @@
     }
   }
 
-  function onCodeDetected(value, opts){
-    opts = opts || {};
+  function onCodeDetected(value){
+    value = String(value).toUpperCase();
     const target = camTargetInputId;
     if(target){
       const el = $(target);
@@ -1024,13 +1047,8 @@
       el.dispatchEvent(new Event('input', {bubbles:true}));
     }
     if(target === 'searchInput'){
-      toast(opts.viaOCR ? 'Texto encontrado na etiqueta: '+value : 'Buscando: '+value);
+      toast('Buscando: '+value);
       tryJumpToPoint(value);
-    } else if(opts.viaOCR){
-      // veio do texto da etiqueta (OCR), não de um código lido com certeza —
-      // preenche o campo mas deixa a sincronização automática normal (com
-      // pequeno atraso) cuidar do envio, dando uma chance de conferir/corrigir
-      toast('Código ilegível — usei o texto da etiqueta: "'+value+'". Confira antes de salvar.');
     } else {
       toast('Código lido: '+value);
       // escanear com sucesso é uma ação discreta e confiável — envia já,
@@ -1098,7 +1116,8 @@
 
   function tentarRotacoes(canvasOriginal, angulos, indice){
     if(indice >= angulos.length){
-      tentarOCR(canvasOriginal); // último recurso antes de pedir digitação manual
+      toast('Não conseguiu ler o código nessa foto — aproxime mais, alinhe melhor ou tente de novo');
+      reabilitarObturador();
       return;
     }
     $('camLabel').textContent = 'Lendo código… ('+(indice+1)+'/'+angulos.length+')';
@@ -1110,66 +1129,31 @@
     });
   }
 
-  // ---------------- leitura do texto da etiqueta (OCR) como último recurso ----------------
-  let ocrWorkerPromise = null;
-  function getOcrWorker(){
-    if(!ocrWorkerPromise){ ocrWorkerPromise = Tesseract.createWorker('eng'); }
-    return ocrWorkerPromise;
-  }
-
-  // pega o "token" alfanumérico mais longo do texto reconhecido — na prática
-  // costuma ser o número de série, já que rótulos ao redor (MAC, FW, HW,
-  // Config) são mais curtos ou têm dois-pontos/espaços no meio
-  function extrairCandidatoSerial(texto){
-    const tokens = (texto||'').toUpperCase().match(/[A-Z0-9]{6,}/g) || [];
-    if(!tokens.length) return null;
-    tokens.sort((a,b)=> b.length - a.length);
-    return tokens[0];
-  }
-
-  async function tentarOCR(canvas){
-    if(!window.Tesseract){
-      toast('Não conseguiu ler o código nessa foto — digite manualmente');
-      reabilitarObturador();
-      return;
-    }
-    $('camLabel').textContent = 'Código ilegível — tentando ler o texto da etiqueta…';
-    try{
-      const worker = await getOcrWorker();
-      const { data } = await worker.recognize(canvas);
-      const candidato = extrairCandidatoSerial(data && data.text);
-      if(candidato){
-        onCodeDetected(candidato, { viaOCR:true });
-      } else {
-        toast('Não conseguiu ler o código nem o texto da etiqueta — digite manualmente');
-        reabilitarObturador();
-      }
-    }catch(e){
-      toast('Não conseguiu ler o código nem o texto da etiqueta — digite manualmente');
-      reabilitarObturador();
-    }
-  }
-
   // tenta primeiro a html5-qrcode (QR + código de barras) e, se não achar
   // nada, tenta o jsQR (só QR, mas roda direto nos pixels, sem depender de
   // nenhum elemento de página) — ambos na mesma orientação testada
+  // uma única instância reaproveitada entre as tentativas de rotação —
+  // criar uma nova a cada tentativa era a maior causa de lentidão na leitura
+  let leitorCodigo = null;
+  function getLeitorCodigo(){
+    if(!leitorCodigo){ leitorCodigo = new Html5Qrcode('qrReaderContainer', { formatsToSupport: formatosSuportados(), verbose:false }); }
+    return leitorCodigo;
+  }
+
   function decodificarCanvas(canvas, callback){
     canvas.toBlob(blob=>{
       if(!blob){ callback(null); return; }
       const file = new File([blob], 'codigo.jpg', { type:'image/jpeg' });
-      const leitor = new Html5Qrcode('qrReaderContainer', { formatsToSupport: formatosSuportados(), verbose:false });
-      leitor.scanFileV2(file, false)
+      getLeitorCodigo().scanFileV2(file, false)
         .then(resultado=>{
           const texto = resultado && resultado.decodedText ? resultado.decodedText : (typeof resultado==='string' ? resultado : null);
-          try{ leitor.clear(); }catch(e){}
           if(texto){ callback(texto); return; }
           tentarJsQR(canvas, callback);
         })
         .catch(()=>{
-          try{ leitor.clear(); }catch(e){}
           tentarJsQR(canvas, callback);
         });
-    }, 'image/jpeg', 0.92);
+    }, 'image/jpeg', 0.85);
   }
 
   function tentarJsQR(canvas, callback){
@@ -1506,6 +1490,40 @@
       await loadAdminUsuarios();
     }catch(err){ toast(err.message); }
   });
+
+  // ---------------- verificação de nova versão + atualização silenciosa ----------------
+  // um único timer cuida das duas coisas — mais leve do que dois separados
+  async function verificarNovaVersaoEAtualizarDados(){
+    // 1) checa se foi publicada uma versão mais nova deste mesmo arquivo —
+    // só avisa o admin; o técnico em campo não recebe esse aviso
+    if(session && session.papel==='admin'){
+      try{
+        const r = await fetch(location.pathname + '?_v=' + Date.now(), { cache:'no-store' });
+        const texto = await r.text();
+        const m = texto.match(/const APP_BUILD = '([^']+)'/);
+        if(m && m[1] && m[1] !== APP_BUILD){
+          $('updateBanner').style.display = 'block';
+        }
+      }catch(e){ /* sem internet no momento — tenta de novo no próximo ciclo */ }
+    }
+
+    // 2) atualiza dados em segundo plano, só nas telas de lista (nunca
+    // enquanto o técnico está digitando num ponto, pra não atrapalhar)
+    if(!session) return;
+    try{
+      if(currentScreenName === 'tecnico-home'){
+        const data = await callApi('listarDemandas', {login:session.login, senha:session.senha});
+        demandas = data.demandas;
+        renderTecnicoDemandasList();
+      } else if(currentScreenName === 'admin-home'){
+        const data = await callApi('listarDemandas', {login:session.login, senha:session.senha});
+        demandasAdmin = data.demandas;
+        if(adminActiveTab==='demandas') renderAdminDemandas();
+      }
+    }catch(e){ /* falha silenciosa — não interrompe o uso do app */ }
+  }
+  $('updateBanner').addEventListener('click', ()=> location.reload());
+  setInterval(verificarNovaVersaoEAtualizarDados, 60000); // a cada 60s
 
   // ---------------- inicialização ----------------
   replaceHistory('login');
