@@ -482,6 +482,7 @@
 </div>
 <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@7.0.0/dist/tesseract.min.js"></script>
 <script>
 (function(){
   const $ = id => document.getElementById(id);
@@ -513,6 +514,7 @@
   let scanning = false;
   let camMode = null;
   let camTargetInputId = null;
+  let camLabelText = '';
   let debounceTimers = {};
 
   // Leitura de QR/código de barras a partir de uma FOTO capturada (não mais
@@ -973,7 +975,7 @@
   }
 
   async function openCam(mode, targetId, label){
-    camMode = mode; camTargetInputId = targetId;
+    camMode = mode; camTargetInputId = targetId; camLabelText = label || '';
     $('camLabel').textContent = mode==='photo' ? 'Foto — '+label : 'Capturar código — '+label;
     $('camFrame').style.display = mode==='code' ? 'block' : 'none';
     $('camBottom').innerHTML = '<div class="cam-shutter" id="camShutter"></div>';
@@ -1013,17 +1015,26 @@
     }
   }
 
-  function onCodeDetected(value){
+  function onCodeDetected(value, opts){
+    opts = opts || {};
     const target = camTargetInputId;
     if(target){
       const el = $(target);
       el.value = value;
       el.dispatchEvent(new Event('input', {bubbles:true}));
     }
-    if(target === 'searchInput'){ toast('Buscando: '+value); tryJumpToPoint(value); }
-    else{
+    if(target === 'searchInput'){
+      toast(opts.viaOCR ? 'Texto encontrado na etiqueta: '+value : 'Buscando: '+value);
+      tryJumpToPoint(value);
+    } else if(opts.viaOCR){
+      // veio do texto da etiqueta (OCR), não de um código lido com certeza —
+      // preenche o campo mas deixa a sincronização automática normal (com
+      // pequeno atraso) cuidar do envio, dando uma chance de conferir/corrigir
+      toast('Código ilegível — usei o texto da etiqueta: "'+value+'". Confira antes de salvar.');
+    } else {
       toast('Código lido: '+value);
-      // escanear é uma ação discreta — envia já, sem esperar o debounce de digitação
+      // escanear com sucesso é uma ação discreta e confiável — envia já,
+      // sem esperar o debounce de digitação
       const p = points.find(x=>x.id===currentPointId);
       if(p && (target==='transNovoInput' || target==='sondaNovaInput')){
         clearTimeout(debounceTimers[p.id]);
@@ -1087,8 +1098,7 @@
 
   function tentarRotacoes(canvasOriginal, angulos, indice){
     if(indice >= angulos.length){
-      toast('Não conseguiu ler o código nessa foto — aproxime mais, alinhe melhor ou tente de novo');
-      reabilitarObturador();
+      tentarOCR(canvasOriginal); // último recurso antes de pedir digitação manual
       return;
     }
     $('camLabel').textContent = 'Lendo código… ('+(indice+1)+'/'+angulos.length+')';
@@ -1098,6 +1108,46 @@
       if(texto){ onCodeDetected(texto); }
       else{ tentarRotacoes(canvasOriginal, angulos, indice+1); }
     });
+  }
+
+  // ---------------- leitura do texto da etiqueta (OCR) como último recurso ----------------
+  let ocrWorkerPromise = null;
+  function getOcrWorker(){
+    if(!ocrWorkerPromise){ ocrWorkerPromise = Tesseract.createWorker('eng'); }
+    return ocrWorkerPromise;
+  }
+
+  // pega o "token" alfanumérico mais longo do texto reconhecido — na prática
+  // costuma ser o número de série, já que rótulos ao redor (MAC, FW, HW,
+  // Config) são mais curtos ou têm dois-pontos/espaços no meio
+  function extrairCandidatoSerial(texto){
+    const tokens = (texto||'').toUpperCase().match(/[A-Z0-9]{6,}/g) || [];
+    if(!tokens.length) return null;
+    tokens.sort((a,b)=> b.length - a.length);
+    return tokens[0];
+  }
+
+  async function tentarOCR(canvas){
+    if(!window.Tesseract){
+      toast('Não conseguiu ler o código nessa foto — digite manualmente');
+      reabilitarObturador();
+      return;
+    }
+    $('camLabel').textContent = 'Código ilegível — tentando ler o texto da etiqueta…';
+    try{
+      const worker = await getOcrWorker();
+      const { data } = await worker.recognize(canvas);
+      const candidato = extrairCandidatoSerial(data && data.text);
+      if(candidato){
+        onCodeDetected(candidato, { viaOCR:true });
+      } else {
+        toast('Não conseguiu ler o código nem o texto da etiqueta — digite manualmente');
+        reabilitarObturador();
+      }
+    }catch(e){
+      toast('Não conseguiu ler o código nem o texto da etiqueta — digite manualmente');
+      reabilitarObturador();
+    }
   }
 
   // tenta primeiro a html5-qrcode (QR + código de barras) e, se não achar
@@ -1138,7 +1188,7 @@
     if(camMode!=='code' || !scanning) return;
     const shutter = $('camShutter');
     if(shutter){ shutter.style.opacity=''; shutter.style.pointerEvents=''; }
-    $('camLabel').textContent = 'Capturar código — '+(camTargetInputId||'');
+    $('camLabel').textContent = 'Capturar código — '+camLabelText;
   }
 
   // ---------------- resumo / sincronização manual (retry) ----------------
