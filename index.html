@@ -127,7 +127,8 @@
   .scan-field input{flex:1;}
   .scan-field .scan-btn{flex-shrink:0;width:44px;background:var(--surface-alt);border:var(--line-width) solid var(--line);
     border-radius:10px;color:var(--accent);display:flex;align-items:center;justify-content:center;
-    cursor:pointer;font-size:17px;}
+    cursor:pointer;}
+  .scan-field .scan-btn svg{display:block;}
   .skip-toggle{font-size:12px;color:var(--text-muted);margin-top:9px;display:flex;align-items:center;gap:7px;cursor:pointer;}
   .skip-toggle input{width:auto;accent-color:var(--accent);}
   .row-2{display:flex;gap:10px;}
@@ -313,7 +314,12 @@
 
       <div class="scan-field" style="margin-bottom:14px;">
         <input type="text" id="searchInput" class="mono" placeholder="Buscar XID, transmissor/sonda antigos ou nome">
-        <div class="scan-btn" data-target="searchInput" data-label="Buscar ponto">▤</div>
+        <div class="scan-btn" data-target="searchInput" data-label="Buscar ponto"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M3 8V4.5C3 3.67157 3.67157 3 4.5 3H8" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M16 3H19.5C20.3284 3 21 3.67157 21 4.5V8" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M21 16V19.5C21 20.3284 20.3284 21 19.5 21H16" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M8 21H4.5C3.67157 21 3 20.3284 3 19.5V16" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg></div>
       </div>
 
       <div class="filter-row">
@@ -340,7 +346,12 @@
         <h3>Transmissor novo <span id="syncIndicatorTrans"></span></h3>
         <div class="scan-field">
           <input type="text" id="transNovoInput" class="mono" placeholder="Escaneie ou digite o código">
-          <div class="scan-btn" data-target="transNovoInput" data-label="Transmissor novo">▤</div>
+          <div class="scan-btn" data-target="transNovoInput" data-label="Transmissor novo"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M3 8V4.5C3 3.67157 3.67157 3 4.5 3H8" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M16 3H19.5C20.3284 3 21 3.67157 21 4.5V8" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M21 16V19.5C21 20.3284 20.3284 21 19.5 21H16" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M8 21H4.5C3.67157 21 3 20.3284 3 19.5V16" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg></div>
         </div>
       </div>
 
@@ -348,9 +359,13 @@
         <h3>Sonda nova</h3>
         <div class="scan-field">
           <input type="text" id="sondaNovaInput" class="mono" placeholder="Escaneie ou digite o código">
-          <div class="scan-btn" data-target="sondaNovaInput" data-label="Sonda nova">▤</div>
+          <div class="scan-btn" data-target="sondaNovaInput" data-label="Sonda nova"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M3 8V4.5C3 3.67157 3.67157 3 4.5 3H8" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M16 3H19.5C20.3284 3 21 3.67157 21 4.5V8" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M21 16V19.5C21 20.3284 20.3284 21 19.5 21H16" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M8 21H4.5C3.67157 21 3 20.3284 3 19.5V16" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg></div>
         </div>
-        <label class="skip-toggle"><input type="checkbox" id="noSondaCheck"> Este ponto não usa sonda separada</label>
       </div>
 
       <div class="field-card">
@@ -492,8 +507,7 @@
   </div>
 
 </div>
-<script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+
 <script>
 (function(){
   const $ = id => document.getElementById(id);
@@ -531,6 +545,30 @@
   let camTargetInputId = null;
   let camLabelText = '';
   let debounceTimers = {};
+
+  // as bibliotecas de leitura de código só são baixadas quando o técnico
+  // realmente for escanear algo pela primeira vez — deixa o login e a lista
+  // de demandas abrindo mais rápido pra quem não vai usar a câmera ainda
+  function carregarScriptUmaVez(src){
+    return new Promise((resolve, reject)=>{
+      if(document.querySelector('script[data-src="'+src+'"]')){ resolve(); return; }
+      const s = document.createElement('script');
+      s.src = src; s.dataset.src = src;
+      s.onload = ()=>resolve();
+      s.onerror = ()=>reject(new Error('Falha ao carregar '+src));
+      document.head.appendChild(s);
+    });
+  }
+  let bibliotecasCodigoPromise = null;
+  function garantirBibliotecasCodigo(){
+    if(!bibliotecasCodigoPromise){
+      bibliotecasCodigoPromise = Promise.all([
+        carregarScriptUmaVez('https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js'),
+        carregarScriptUmaVez('https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js')
+      ]);
+    }
+    return bibliotecasCodigoPromise;
+  }
 
   // Leitura de QR/código de barras a partir de uma FOTO capturada (não mais
   // vídeo ao vivo) — funciona em qualquer navegador, inclusive Safari/iPhone.
@@ -628,8 +666,8 @@
     currentScreenName = name;
     showScreen(name);
     if(name==='list') renderList();
-    if(name==='tecnico-home') renderTecnicoDemandasList();
-    if(name==='admin-home') renderAdminActiveTab();
+    if(name==='tecnico-home'){ renderTecnicoDemandasList(); loadTecnicoDemandas(); }
+    if(name==='admin-home'){ renderAdminActiveTab(); loadAdminDemandas(); }
   }
 
   function goTo(name){ screenStack.push(currentScreenName); currentScreenName = name; showScreen(name); pushHistory(name); }
@@ -684,6 +722,7 @@
       goToRoot('admin-home');
       await loadAdminUsuarios();
       await loadAdminDemandas();
+      verificarNovaVersao();
     } else {
       goToRoot('tecnico-home');
       await loadTecnicoDemandas();
@@ -723,13 +762,14 @@
     try{
       const data = await callApi('getPontosDemanda', {login:session.login, senha:session.senha, sheetId:d.sheetId});
       points = data.pontos.map((p,i)=>{
-        const semSonda = String(p.sondaNova||'').trim() === '-';
-        const sondaVal = semSonda ? '' : (p.sondaNova||'');
+        // planilhas antigas podem ter um "-" gravado (versão anterior do app) —
+        // trata como campo vazio, sem nenhuma marcação especial
+        const sondaVal = String(p.sondaNova||'').trim() === '-' ? '' : (p.sondaNova||'');
         const temDado = !!(p.transNovo) || !!sondaVal;
         return {
           id:'p'+i, xid:p.xid, nome:p.nome,
           transmissorAntigo:p.transmissorAntigo, sondaAntiga:p.sondaAntiga,
-          transNovo:p.transNovo||'', sondaNova: sondaVal, noSonda: semSonda,
+          transNovo:p.transNovo||'', sondaNova: sondaVal,
           photo:null, status: temDado ? 'done' : 'pending', synced: temDado
         };
       });
@@ -746,10 +786,25 @@
   }
 
   function draftKey(){ return 'sw_draft_'+session.login+'_'+currentDemanda.sheetId; }
+  function snapshotPonto(p){
+    return {transNovo:p.transNovo, sondaNova:p.sondaNova, photo:p.photo, status:p.status, synced:p.synced};
+  }
+  // grava só o ponto que mudou (mais rápido — evita serializar a demanda
+  // inteira, com todas as fotos, a cada letra digitada)
+  function persistDraftPoint(p){
+    try{
+      const raw = localStorage.getItem(draftKey());
+      const draft = raw ? JSON.parse(raw) : {};
+      draft[p.xid] = snapshotPonto(p);
+      localStorage.setItem(draftKey(), JSON.stringify(draft));
+    }catch(e){}
+  }
+  // reconstrói o rascunho inteiro — usar só quando vários pontos mudam de
+  // uma vez (ex: pontos irmãos, sincronizar tudo)
   function persistDraft(){
     try{
       const draft = {};
-      points.forEach(p=>{ draft[p.xid] = {transNovo:p.transNovo, sondaNova:p.sondaNova, noSonda:p.noSonda, photo:p.photo, status:p.status, synced:p.synced}; });
+      points.forEach(p=>{ draft[p.xid] = snapshotPonto(p); });
       localStorage.setItem(draftKey(), JSON.stringify(draft));
     }catch(e){}
   }
@@ -763,7 +818,6 @@
         if(!d) return;
         if(!p.transNovo && d.transNovo) p.transNovo = d.transNovo;
         if(!p.sondaNova && d.sondaNova) p.sondaNova = d.sondaNova;
-        if(d.noSonda) p.noSonda = true;
         if(d.photo) p.photo = d.photo;
         if(d.status==='done') p.status='done';
         if(typeof d.synced==='boolean') p.synced = d.synced;
@@ -774,7 +828,7 @@
 
   // ---------------- envio automático (sem esperar clique em "Sincronizar") ----------------
   function registroDe(p){
-    return { xid:p.xid, transmissor_novo:p.transNovo, sonda_nova: p.noSonda ? '-' : p.sondaNova, foto_base64: p.photo || null };
+    return { xid:p.xid, transmissor_novo:p.transNovo, sonda_nova: p.sondaNova, foto_base64: p.photo || null };
   }
 
   async function autoSyncPoint(p, opts){
@@ -785,12 +839,12 @@
       concluir:false, registros:[registroDe(p)]
     });
     p.synced = !!result.confirmed;
-    persistDraft();
+    persistDraftPoint(p);
     updateSyncIndicator();
     if(!opts.silent){
       toast(result.confirmed ? 'Enviado para a planilha' : 'Salvo — será reenviado (sem confirmação de rede)');
     }
-    if(currentScreenName==='list') renderList();
+    updatePointRowInDOM(p);
   }
 
   function scheduleAutoSync(p, delayMs){
@@ -828,18 +882,47 @@
     if(list.length===0){ wrap.innerHTML = emptyHtml('Nenhum ponto nesse filtro.'); return; }
 
     list.forEach(p=>{
-      const el = document.createElement('div');
-      el.className = 'point'+(p.status==='done'?' done':'');
-      const dot = p.status==='done' ? '<span class="sync-dot '+(p.synced?'synced':'pending-sync')+'"></span>' : '';
-      el.innerHTML = `
-        <div class="point-info">
-          <p class="xid">${esc(p.xid)}</p>
-          <p class="name">${esc(p.nome)}</p>
-        </div>
-        <span class="status-chip ${p.status}">${p.status==='done'?'Concluído':'Pendente'}${dot}</span>`;
-      el.addEventListener('click', ()=> openCapture(p.id));
+      const el = buildPointRow(p);
       wrap.appendChild(el);
     });
+  }
+
+  function buildPointRow(p){
+    const el = document.createElement('div');
+    el.dataset.pointId = p.id;
+    fillPointRow(el, p);
+    el.addEventListener('click', ()=> openCapture(p.id));
+    return el;
+  }
+
+  function fillPointRow(el, p){
+    el.className = 'point'+(p.status==='done'?' done':'');
+    const dot = p.status==='done' ? '<span class="sync-dot '+(p.synced?'synced':'pending-sync')+'"></span>' : '';
+    el.innerHTML = `
+      <div class="point-info">
+        <p class="xid">${esc(p.xid)}</p>
+        <p class="name">${esc(p.nome)}</p>
+      </div>
+      <span class="status-chip ${p.status}">${p.status==='done'?'Concluído':'Pendente'}${dot}</span>`;
+  }
+
+  // atualização rápida: só o cartão do ponto que mudou + os números do
+  // topo, sem reconstruir a lista inteira (mais leve com muitos pontos)
+  function updatePointRowInDOM(p){
+    if(currentScreenName !== 'list') return;
+    const done = points.filter(x=>x.status==='done').length;
+    $('progressCount').textContent = done+' de '+points.length+' concluídos';
+    $('progressFill').style.width = (points.length? (done/points.length*100):0)+'%';
+    $('topBadge').textContent = done+'/'+points.length;
+
+    const el = document.querySelector('#pointList [data-point-id="'+p.id+'"]');
+    if(el){
+      fillPointRow(el, p);
+    } else {
+      // o ponto pode não estar na lista renderizada agora por causa de um
+      // filtro/busca ativo — nesse caso o recálculo completo é necessário
+      renderList();
+    }
   }
 
   document.querySelectorAll('.filter-chip').forEach(chip=>{
@@ -871,8 +954,6 @@
 
     $('transNovoInput').value = p.transNovo;
     $('sondaNovaInput').value = p.sondaNova;
-    $('noSondaCheck').checked = p.noSonda;
-    $('sondaNovaInput').disabled = p.noSonda;
 
     $('photoBox').innerHTML = p.photo ? `<img src="${p.photo}">` : `<div class="photo-placeholder">Nenhuma foto registrada</div>`;
     updateSyncIndicator();
@@ -880,12 +961,6 @@
     goTo('capture');
   }
 
-  $('noSondaCheck').addEventListener('change', e=>{
-    $('sondaNovaInput').disabled = e.target.checked;
-    if(e.target.checked) $('sondaNovaInput').value='';
-    const p = points.find(x=>x.id===currentPointId);
-    if(p){ p.noSonda = e.target.checked; if(e.target.checked) p.sondaNova=''; persistDraft(); scheduleAutoSync(p, 1200); }
-  });
   function forcarMaiusculo(el){
     const inicio = el.selectionStart, fim = el.selectionEnd;
     const maiusculo = el.value.toUpperCase();
@@ -898,12 +973,12 @@
   $('transNovoInput').addEventListener('input', e=>{
     forcarMaiusculo(e.target);
     const p = points.find(x=>x.id===currentPointId);
-    if(p){ p.transNovo = e.target.value; persistDraft(); updateSyncIndicator(); scheduleAutoSync(p, 1500); }
+    if(p){ p.transNovo = e.target.value; persistDraftPoint(p); updateSyncIndicator(); scheduleAutoSync(p, 1500); }
   });
   $('sondaNovaInput').addEventListener('input', e=>{
     forcarMaiusculo(e.target);
     const p = points.find(x=>x.id===currentPointId);
-    if(p){ p.sondaNova = e.target.value; persistDraft(); scheduleAutoSync(p, 1500); }
+    if(p){ p.sondaNova = e.target.value; persistDraftPoint(p); scheduleAutoSync(p, 1500); }
   });
 
   // pontos "irmãos": mesmo transmissor E mesma sonda antigos = mesmo equipamento
@@ -923,13 +998,13 @@
     if(!siblings.length) return;
     let aplicados = 0, conflitos = 0;
     siblings.forEach(s=>{
-      const jaIgual = s.transNovo===p.transNovo && s.sondaNova===p.sondaNova && s.noSonda===p.noSonda;
+      const jaIgual = s.transNovo===p.transNovo && s.sondaNova===p.sondaNova;
       if(jaIgual) return;
       if(s.status==='done' && s.transNovo){
         conflitos++; // já confirmado com outro valor — não sobrescreve sozinho
         return;
       }
-      s.transNovo = p.transNovo; s.sondaNova = p.sondaNova; s.noSonda = p.noSonda; s.status = 'done';
+      s.transNovo = p.transNovo; s.sondaNova = p.sondaNova; s.status = 'done';
       aplicados++;
       autoSyncPoint(s, {silent:true});
     });
@@ -941,12 +1016,10 @@
   $('savePointBtn').addEventListener('click', ()=>{
     const p = points.find(x=>x.id===currentPointId);
     const transNovo = $('transNovoInput').value.trim();
-    const noSonda = $('noSondaCheck').checked;
     const sondaNova = $('sondaNovaInput').value.trim();
-    if(noSonda && !transNovo){ toast('Este ponto não usa sonda — informe ao menos o transmissor novo'); return; }
-    if(!noSonda && !transNovo && !sondaNova){ toast('Informe ao menos o transmissor novo ou a sonda nova'); return; }
-    p.transNovo = transNovo; p.sondaNova = noSonda ? '' : sondaNova; p.noSonda = noSonda; p.status = 'done';
-    persistDraft();
+    if(!transNovo && !sondaNova){ toast('Informe ao menos o transmissor novo ou a sonda nova'); return; }
+    p.transNovo = transNovo; p.sondaNova = sondaNova; p.status = 'done';
+    persistDraftPoint(p);
     clearTimeout(debounceTimers[p.id]);
     autoSyncPoint(p, {silent:false});
     applyToSiblings(p);
@@ -959,12 +1032,11 @@
     if(!confirm('Isso apaga o transmissor novo, a sonda nova e a foto deste ponto — inclusive na planilha. Pontos irmãos não são afetados. Continuar?')) return;
 
     clearTimeout(debounceTimers[p.id]);
-    p.transNovo = ''; p.sondaNova = ''; p.noSonda = false; p.photo = null; p.status = 'pending'; p.synced = false;
-    persistDraft();
+    p.transNovo = ''; p.sondaNova = ''; p.photo = null; p.status = 'pending'; p.synced = false;
+    persistDraftPoint(p);
 
     $('transNovoInput').value = '';
-    $('sondaNovaInput').value = ''; $('sondaNovaInput').disabled = false;
-    $('noSondaCheck').checked = false;
+    $('sondaNovaInput').value = '';
     $('photoBox').innerHTML = '<div class="photo-placeholder">Nenhuma foto registrada</div>';
     updateSyncIndicator();
 
@@ -1011,6 +1083,7 @@
     $('camBottom').innerHTML = '<div class="cam-shutter" id="camShutter"></div>';
     $('camShutter').addEventListener('click', handleShutterTap);
     $('camVideo').style.display = '';
+    if(mode==='code') garantirBibliotecasCodigo().catch(()=>{}); // já dispara o download, em paralelo com a permissão de câmera
 
     try{
       stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
@@ -1082,18 +1155,30 @@
   // ponto, ou tenta ler QR/código de barras na imagem capturada (mais
   // confiável que tentar ler direto do vídeo ao vivo, que é o que estava
   // falhando em vários aparelhos)
-  function handleShutterTap(){
+  async function handleShutterTap(){
     const video = $('camVideo');
     const canvas = $('canvasEl'); const ctx = canvas.getContext('2d', { willReadFrequently: true, colorSpace: 'srgb' });
     canvas.width = video.videoWidth; canvas.height = video.videoHeight;
     ctx.drawImage(video,0,0,canvas.width,canvas.height);
 
     if(camMode==='photo'){
-      const dataUrl = canvas.toDataURL('image/jpeg',0.8);
+      // limita o lado maior a 1280px antes de gravar — fotos de câmera de
+      // celular saem enormes por padrão, e isso deixa o envio automático
+      // bem mais rápido sem perda visual perceptível pra conferir o ponto
+      const MAX_LADO = 1280;
+      let outCanvas = canvas;
+      if(canvas.width > MAX_LADO || canvas.height > MAX_LADO){
+        const escala = MAX_LADO / Math.max(canvas.width, canvas.height);
+        outCanvas = document.createElement('canvas');
+        outCanvas.width = Math.round(canvas.width*escala);
+        outCanvas.height = Math.round(canvas.height*escala);
+        outCanvas.getContext('2d').drawImage(canvas, 0, 0, outCanvas.width, outCanvas.height);
+      }
+      const dataUrl = outCanvas.toDataURL('image/jpeg',0.8);
       const p = points.find(x=>x.id===currentPointId);
       p.photo = dataUrl;
       $('photoBox').innerHTML = `<img src="${dataUrl}">`;
-      persistDraft();
+      persistDraftPoint(p);
       toast('Foto capturada — enviando…');
       autoSyncPoint(p, {silent:true});
       closeCam();
@@ -1103,9 +1188,17 @@
     // camMode === 'code': decodifica a foto capturada em vez do vídeo ao vivo,
     // tentando em algumas rotações — etiquetas em campo raramente ficam
     // perfeitamente alinhadas com o celular
-    if(!window.Html5Qrcode){ toast('Leitor de código não carregou — verifique sua conexão e recarregue a página.'); return; }
     const shutter = $('camShutter');
     shutter.style.opacity = '0.4'; shutter.style.pointerEvents = 'none';
+    $('camLabel').textContent = 'Carregando leitor de código…';
+    try{
+      await garantirBibliotecasCodigo();
+    }catch(e){
+      toast('Não foi possível carregar o leitor de código — verifique sua conexão.');
+      reabilitarObturador();
+      return;
+    }
+    if(!window.Html5Qrcode){ toast('Leitor de código não carregou — verifique sua conexão e recarregue a página.'); reabilitarObturador(); return; }
     $('camLabel').textContent = 'Lendo código…';
     tentarRotacoes(canvas, [0, 90, 180, 270], 0);
   }
@@ -1199,7 +1292,7 @@
         <p class="name">${esc(p.nome)}</p>
         <div class="kv-grid">
           <span class="k">Transmissor novo</span><span class="v">${esc(p.transNovo)}</span>
-          <span class="k">Sonda nova</span><span class="v">${p.noSonda?'não se aplica':esc(p.sondaNova)}</span>
+          <span class="k">Sonda nova</span><span class="v">${p.sondaNova ? esc(p.sondaNova) : '—'}</span>
         </div>
         ${p.photo ? `<div class="thumb-strip"><img src="${p.photo}"></div>` : ''}`;
       wrap.appendChild(el);
@@ -1500,37 +1593,24 @@
 
   // ---------------- verificação de nova versão + atualização silenciosa ----------------
   // um único timer cuida das duas coisas — mais leve do que dois separados
-  async function verificarNovaVersaoEAtualizarDados(){
-    // 1) checa se foi publicada uma versão mais nova deste mesmo arquivo —
-    // só avisa o admin; o técnico em campo não recebe esse aviso
-    if(session && session.papel==='admin'){
-      try{
-        const r = await fetch(location.pathname + '?_v=' + Date.now(), { cache:'no-store' });
-        const texto = await r.text();
-        const m = texto.match(/const APP_BUILD = '([^']+)'/);
-        if(m && m[1] && m[1] !== APP_BUILD){
-          $('updateBanner').style.display = 'block';
-        }
-      }catch(e){ /* sem internet no momento — tenta de novo no próximo ciclo */ }
-    }
-
-    // 2) atualiza dados em segundo plano, só nas telas de lista (nunca
-    // enquanto o técnico está digitando num ponto, pra não atrapalhar)
-    if(!session) return;
+  // checa se foi publicada uma versão mais nova deste mesmo arquivo — só
+  // avisa o admin, e só quando ele realmente volta a usar o app (sem
+  // timer rodando sozinho em segundo plano)
+  async function verificarNovaVersao(){
+    if(!session || session.papel!=='admin') return;
     try{
-      if(currentScreenName === 'tecnico-home'){
-        const data = await callApi('listarDemandas', {login:session.login, senha:session.senha});
-        demandas = data.demandas;
-        renderTecnicoDemandasList();
-      } else if(currentScreenName === 'admin-home'){
-        const data = await callApi('listarDemandas', {login:session.login, senha:session.senha});
-        demandasAdmin = data.demandas;
-        if(adminActiveTab==='demandas') renderAdminDemandas();
+      const r = await fetch(location.pathname + '?_v=' + Date.now(), { cache:'no-store' });
+      const texto = await r.text();
+      const m = texto.match(/const APP_BUILD = '([^']+)'/);
+      if(m && m[1] && m[1] !== APP_BUILD){
+        $('updateBanner').style.display = 'block';
       }
-    }catch(e){ /* falha silenciosa — não interrompe o uso do app */ }
+    }catch(e){ /* sem internet no momento — tenta de novo na próxima vez */ }
   }
   $('updateBanner').addEventListener('click', ()=> location.reload());
-  setInterval(verificarNovaVersaoEAtualizarDados, 60000); // a cada 60s
+  document.addEventListener('visibilitychange', ()=>{
+    if(!document.hidden) verificarNovaVersao();
+  });
 
   // ---------------- inicialização ----------------
   replaceHistory('login');
