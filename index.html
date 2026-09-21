@@ -112,6 +112,13 @@
   .footer-fixed{position:sticky;bottom:0;left:0;right:0;padding:14px 16px;
     background:linear-gradient(to top,var(--bg) 65%,transparent);max-width:480px;margin:0 auto;}
 
+  .list-row{background:var(--surface);border:var(--line-width) solid var(--line);border-radius:10px;
+    padding:13px 14px;margin-bottom:9px;cursor:pointer;display:flex;align-items:center;
+    justify-content:space-between;gap:10px;}
+  .list-row .main{flex:1;min-width:0;}
+  .list-row .main .t1{font-size:13.5px;font-weight:700;margin:0 0 3px;color:var(--text);}
+  .list-row .main .t2{font-size:12px;color:var(--text-muted);margin:0;}
+
   .field-card{background:var(--surface);border:var(--line-width) solid var(--line);border-radius:12px;padding:15px;margin-bottom:12px;}
   .field-card h3{font-size:12px;margin:0 0 4px;color:var(--text-muted);font-weight:700;
     display:flex;align-items:center;justify-content:space-between;letter-spacing:.02em;text-transform:uppercase;}
